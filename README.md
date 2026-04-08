@@ -35,6 +35,9 @@ graph TB
 
 ## What is this?
 
+![Wiki graph view after setup](docs/graph-view.png)
+*Your wiki after a few ingests — interconnected knowledge pages in Logseq's graph view.*
+
 In April 2026, Andrej Karpathy published a gist called "LLM Wiki" that got 5,000+ stars in days. The idea: let an LLM maintain a structured, cross-referenced wiki for you. Feed it raw sources, it extracts facts, links them together, and keeps everything consistent. The wiki becomes a persistent, compounding artifact instead of a graveyard of stale notes.
 
 Everyone loved the concept. Almost nobody built one. The gist describes *what* to build, not *how* to wire it up with real tools, real files, and real workflows. **llm-wiki** is the implementation. It uses Claude Code as the LLM brain and either Logseq or Obsidian as the wiki UI, with a two-layer cache architecture that turned out to be the key insight Karpathy's gist does not mention.
