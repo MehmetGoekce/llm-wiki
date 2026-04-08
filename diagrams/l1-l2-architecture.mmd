@@ -1,0 +1,28 @@
+graph TB
+    subgraph "Every Session (Auto-loaded)"
+        L1[L1: Claude Memory<br/>~14 files]
+        L1R[Rules & Gotchas]
+        L1I[Identity & Preferences]
+        L1C[Credentials]
+        L1 --> L1R
+        L1 --> L1I
+        L1 --> L1C
+    end
+
+    subgraph "On Demand (/wiki query)"
+        L2[L2: Logseq Wiki<br/>~46 pages]
+        L2P[Projects & History]
+        L2W[Workflows & Processes]
+        L2K[Research & Learning]
+        L2 --> L2P
+        L2 --> L2W
+        L2 --> L2K
+    end
+
+    NEW[New Knowledge] --> ROUTE{Quick rule<br/>or gotcha?}
+    ROUTE -->|Yes| L1
+    ROUTE -->|No| L2
+
+    USER[User Query] --> CLAUDE[Claude Code]
+    CLAUDE --> L1
+    CLAUDE -->|Deep question| L2

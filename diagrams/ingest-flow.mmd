@@ -1,0 +1,7 @@
+graph LR
+    SRC[Source<br/>URL / File / Text] --> A[Phase 1<br/>Analyze & Extract]
+    A --> B[Phase 2<br/>Scan Wiki<br/>Find affected pages]
+    B --> C[Phase 3<br/>Update 5-15 Pages<br/>Create new / Append]
+    C --> D[Phase 4<br/>Quality Gate<br/>Properties? Cross-refs?<br/>No credentials?]
+    D --> E[Phase 5<br/>Report<br/>Pages touched / Warnings]
+    E --> GIT[git commit]

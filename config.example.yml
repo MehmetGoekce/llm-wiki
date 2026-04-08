@@ -1,0 +1,13 @@
+# llm-wiki configuration
+tool: logseq          # logseq or obsidian
+wiki_path: ~/Documents/MyWiki/
+pages_dir: pages      # relative to wiki_path
+memory_path: ~/.claude/projects/my-project/memory/
+namespaces:
+  - Business
+  - Tech
+  - Content
+  - Projects
+  - People
+  - Learning
+  - Reference

@@ -1,0 +1,92 @@
+- wiki-version:: 1.0
+- last-updated:: {{DATE}}
+- maintained-by:: llm-wiki
+- type:: schema
+- ## Namespace Conventions
+	- Top-Level: {{NAMESPACES}}
+	- Page Naming: Title Case, hyphens for multi-word (`Wiki/Projects/My-Project`)
+	- Max Depth: 3 levels (e.g., `Wiki/Business/Clients/ClientName`)
+	- Hub Pages: Every namespace level has a hub page listing its children
+	- File Names: `___` (triple underscore) as namespace separator (e.g., `Wiki___Tech___Docker.md`)
+- ## Page Types and Required Properties
+	- ### Entity (Person, Client, Tool, Service, Technology)
+		- type:: entity
+		- entity-type:: person | client | tool | service | technology
+		- created:: YYYY-MM-DD
+		- updated:: YYYY-MM-DD
+		- status:: active | inactive | archived
+		- source:: memory-migration | ingest | manual
+	- ### Project
+		- type:: project
+		- status:: active | completed | on-hold | cancelled
+		- created:: YYYY-MM-DD
+		- updated:: YYYY-MM-DD
+		- started:: YYYY-MM-DD
+		- completed:: YYYY-MM-DD (if applicable)
+	- ### Knowledge (Learning, Reference)
+		- type:: knowledge
+		- domain:: tech | business | content | ops
+		- created:: YYYY-MM-DD
+		- updated:: YYYY-MM-DD
+		- confidence:: high | medium | low | stale
+	- ### Feedback (Lessons Learned, Gotchas)
+		- type:: feedback
+		- severity:: critical | important | nice-to-know
+		- created:: YYYY-MM-DD
+		- verified:: YYYY-MM-DD
+		- applies-to:: (page references to affected systems)
+	- ### Hub (Namespace Index)
+		- type:: hub
+		- namespace:: (the namespace this hub page indexes)
+- ## Cross-Reference Rules
+	- Every wiki page MUST have at least one `[[Wiki/...]]` link to another wiki page
+	- Hub pages MUST list ALL child pages in their namespace
+	- When a page mentions an entity that has its own page, use `[[Wiki/Entity/Name]]` link syntax
+	- Bidirectional links are automatic in Logseq (backlinks panel)
+	- Tags: `#tag` for lightweight categorization (e.g., `#docker`, `#deploy`, `#critical`)
+	- External links: `[Text](URL)` for URLs outside the wiki
+- ## Content Format Rules
+	- Every line is a Logseq block (starts with `- `)
+	- Properties: `property:: value` syntax (NO YAML frontmatter)
+	- Page properties go on the first blocks of the page
+	- Sections: `## Heading` syntax inside a block: `- ## Section Name`
+	- Code blocks: fenced with triple backticks inside a block
+	- NEVER store credentials, passwords, or API tokens in wiki pages
+- ## L1/L2 Architecture
+	- ### L1 = Claude Memory (auto-loaded every session)
+		- Feedback rules and quick gotchas
+		- User identity (name, preferences)
+		- Credentials (MUST NEVER go into the wiki)
+		- Everything Claude needs to know at the START of every session
+	- ### L2 = Wiki (on-demand via `/wiki query`)
+		- Projects and their details
+		- Workflows and processes
+		- Research and learning notes
+		- Deep technical knowledge
+		- Business intelligence and strategy
+	- ### Boundary Rules
+		- New quick rule or gotcha discovered? --> Save to Claude Memory (L1)
+		- New project, workflow, or research? --> Save to Wiki (L2)
+		- Same info in L1 AND L2? --> Warning on `/wiki lint`
+- ## Ingest Workflow
+	- Analyze new source --> extract entities, facts, relationships
+	- Identify affected wiki pages (existing + new)
+	- Target: 5-15 page touches per ingest
+	- Create new pages with all required properties
+	- Existing pages: APPEND, never overwrite
+	- Update hub pages
+	- Add cross-references
+	- Set `updated::` property on all changed pages
+- ## Lint Rules
+	- **Orphan Detection**: Pages with 0 incoming [[links]] (hub pages excluded)
+	- **Stale Detection**: `updated::` > 90 days old AND `confidence:: high`
+	- **Missing Properties**: Pages missing type-specific required properties
+	- **Broken References**: [[links]] to non-existent pages
+	- **Hub Completeness**: Hub pages missing children in their namespace
+	- **Credential Leak**: Scan for token/password/secret patterns
+	- **Empty Pages**: Only properties, no content
+	- **Cross-Ref Minimum**: Pages with fewer than 1 outgoing [[link]]
+	- **L1/L2 Duplicates**: Same info in Memory AND Wiki
+- ## Conventions
+	- Language: English (customize per project)
+	- Dates: ISO 8601 (YYYY-MM-DD)
