@@ -2,13 +2,50 @@
 
 Build [Karpathy's LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) with Claude Code. Two-layer cache architecture (L1/L2). Supports Logseq and Obsidian.
 
-![L1/L2 Architecture](diagrams/l1-l2-architecture.png)
+```mermaid
+graph TB
+    subgraph "Every Session — Auto-loaded"
+        L1[L1: Claude Memory]
+        L1R[Rules & Gotchas]
+        L1I[Identity & Preferences]
+        L1C[Credentials]
+        L1 --> L1R
+        L1 --> L1I
+        L1 --> L1C
+    end
+
+    subgraph "On Demand — /wiki query"
+        L2[L2: Wiki]
+        L2P[Projects & History]
+        L2W[Workflows & Processes]
+        L2K[Research & Learning]
+        L2 --> L2P
+        L2 --> L2W
+        L2 --> L2K
+    end
+
+    NEW[New Knowledge] --> ROUTE{Quick rule?}
+    ROUTE -->|Yes| L1
+    ROUTE -->|No| L2
+
+    USER[User Query] --> CLAUDE[Claude Code]
+    CLAUDE --> L1
+    CLAUDE -->|Deep question| L2
+```
 
 ## What is this?
 
 In April 2026, Andrej Karpathy published a gist called "LLM Wiki" that got 5,000+ stars in days. The idea: let an LLM maintain a structured, cross-referenced wiki for you. Feed it raw sources, it extracts facts, links them together, and keeps everything consistent. The wiki becomes a persistent, compounding artifact instead of a graveyard of stale notes.
 
 Everyone loved the concept. Almost nobody built one. The gist describes *what* to build, not *how* to wire it up with real tools, real files, and real workflows. **llm-wiki** is the implementation. It uses Claude Code as the LLM brain and either Logseq or Obsidian as the wiki UI, with a two-layer cache architecture that turned out to be the key insight Karpathy's gist does not mention.
+
+## Why use this?
+
+- **5-minute setup.** `./setup.sh` creates your schema, namespaces, and git tracking. No manual design needed.
+- **Claude becomes your wiki maintainer.** `/wiki ingest` updates 5-15 pages with cross-references from a single source.
+- **L1/L2 architecture.** Auto-loaded rules in memory (L1) + deep knowledge in the wiki (L2). No other tool has this.
+- **Built-in quality checks.** `/wiki lint` finds orphan pages, stale content, broken refs, and credential leaks.
+- **Logseq + Obsidian.** Use whichever you already have. No tool switch required.
 
 ## Quick Start
 
