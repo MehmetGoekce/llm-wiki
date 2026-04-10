@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/MehmetGoekce/llm-wiki/issues
+    about: For questions, open a blank issue. No question is too small.
