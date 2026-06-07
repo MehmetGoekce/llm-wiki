@@ -223,19 +223,24 @@ A namespace index page that lists all child pages within its namespace. Hub page
 | `type::` | `hub` | Page type identifier |
 | `namespace::` | Namespace path | The namespace this hub indexes |
 
+A hub carries an `### Index` block: one **routing line** per child page, formatted
+`[[link]] -- description #tags`. This is the wiki's "page table" — `/wiki query` reads the index
+first (cheap) and only then opens the 1-3 pages whose description matches. Cold pages demoted by
+`/wiki prune` move to the `### Archive` block (see [Hub-Index-Routing & LRU-Demote](#hub-index-routing--lru-demote)).
+
 **Example (Logseq format):**
 
 ```markdown
 - type:: hub
 - namespace:: Wiki/Tech
-- ## Tech Hub
-  - All technical knowledge pages.
-  - ### Pages
-    - [[Wiki/Tech/Strapi]] -- Headless CMS
-    - [[Wiki/Tech/Next-js]] -- Frontend framework
-    - [[Wiki/Tech/PM2]] -- Process manager
-    - [[Wiki/Tech/Nginx]] -- Reverse proxy
-    - [[Wiki/Tech/Deployment]] -- Deploy pipeline
+- ## Tech
+  - ### Index
+    - [[Wiki/Tech/Strapi]] -- Headless CMS, ports, deploy + migration gotchas #strapi #deploy
+    - [[Wiki/Tech/Next-js]] -- Frontend framework, SSR/ISR config #nextjs
+    - [[Wiki/Tech/PM2]] -- Process manager, cwd/reload bug #pm2 #deploy
+    - [[Wiki/Tech/Nginx]] -- Reverse proxy, TLS, upstream ports #nginx
+  - ### Archive
+    - [[Wiki/Tech/Legacy-Foo]] -- (demoted 2026-06-07) old Foo stack, replaced by Bar #archived
   - ### Related Hubs
     - [[Wiki/Projects]] -- Project-specific tech decisions
     - [[Wiki/Reference]] -- Workflow documentation
@@ -479,3 +484,50 @@ Code blocks, tables, and all standard markdown features work as expected.
 - Tags: `#tag` for lightweight categorization
 - No credentials in wiki content (ever)
 - Append only -- never overwrite existing content during ingest
+
+## Hub-Index-Routing & LRU-Demote
+
+L1 (Claude Memory) has an index — the auto-loaded `MEMORY.md` pointer list. L2 (the wiki) had none.
+As the wiki grows, a grep-over-every-page retrieval gets imprecise and expensive. These two mechanisms
+keep L2 precise while it scales — the CPU-cache analogy, carried through to the index and eviction layers.
+
+### Hub-Index-Routing (two-stage query)
+
+Each hub page carries an `### Index` block: one routing line per active child page, formatted
+`[[Wiki/NS/Page]] -- <one-sentence description, <=120 chars> #tag #tag`.
+
+- **Stage 1** — `/wiki query` reads only the hub `### Index` blocks of the candidate namespaces and
+  picks the 3 (max 5) most relevant pages by description. This is the wiki's *page table / TLB*.
+- **Stage 2** — it then reads only those full pages. Grep-over-everything is just the **L3 fallback**
+  when routing finds nothing.
+- `/wiki ingest` maintains the routing line for every page it creates or updates (required, else the
+  page is unroutable). The description is the routing key: terse, distinctive, no filler.
+
+### LRU-Demote (`/wiki prune`, default 6 months)
+
+- `/wiki query` appends every full-page hit to the **Access-Log** page (append-only, non-structural,
+  no per-query commit).
+- `/wiki prune` computes the last access per page (never logged -> `created::` proxy). Cold = no access
+  in N months.
+- Demote = **eviction from the index, not deletion or rename**: the routing line moves from `### Index`
+  to `### Archive`, and the page is marked `archived:: <date>` (the canonical demote marker, valid on
+  any type; entity pages also get `status:: archived`). The file stays in place, `[[links]]` stay
+  intact, and it is still greppable as L3.
+- Exempt: hub pages, Schema, Dashboard, the Access-Log, and `status:: active` projects.
+- Re-promote: if an L3 grep hits an archived page again, its routing line returns to `### Index` and
+  the archived properties are removed.
+- **Critical:** the wiki tool links by page name, so a file rename/move would break every incoming
+  `[[link]]`. Never move a demoted page — only evict it from the index.
+
+### Access-Log page
+
+`Wiki/Reference/Access-Log` (`access-log:: true`, `type:: reference`) holds an append-only `## Log`
+block. It is exempt from the orphan, stale, and demote lint rules and is machine-appended — do not
+hand-edit it.
+
+### Related lint rules
+
+- **Index Drift** — a routing line with no matching page (orphaned), or an active page with no routing
+  line in its namespace hub (unroutable). `lint --fix` removes orphans and backfills missing lines.
+- **Archived-in-Live-Index** — an archived page (`archived::` set) still in `### Index` instead of
+  `### Archive` (an unclean prune). `lint --fix` moves it.

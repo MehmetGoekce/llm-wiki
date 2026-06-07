@@ -198,6 +198,11 @@ if tool == "logseq":
         if write_file(os.path.join(pages_path, f"Wiki___{ns}.md"), hub):
             print(f"  Created: Wiki/{ns}")
 
+    # Access-Log (append-only LRU signal for /wiki prune)
+    access_log = read_template("Access-Log.md").replace("{{DATE}}", today)
+    if write_file(os.path.join(pages_path, "Wiki___Reference___Access-Log.md"), access_log):
+        print(f"  Created: Wiki/Reference/Access-Log")
+
 else:
     wiki_dir = os.path.join(wiki_path, "Wiki")
     os.makedirs(wiki_dir, exist_ok=True)
@@ -226,6 +231,13 @@ else:
         hub = hub_tpl.replace("{{NAMESPACE}}", ns).replace("{{DATE}}", today)
         if write_file(os.path.join(ns_dir, "_index.md"), hub):
             print(f"  Created: Wiki/{ns}/_index.md")
+
+    # Access-Log (append-only LRU signal for /wiki prune)
+    ref_dir = os.path.join(wiki_dir, "Reference")
+    os.makedirs(ref_dir, exist_ok=True)
+    access_log = read_template("Access-Log.md").replace("{{DATE}}", today)
+    if write_file(os.path.join(ref_dir, "Access-Log.md"), access_log):
+        print(f"  Created: Wiki/Reference/Access-Log.md")
 
 PYEOF
 

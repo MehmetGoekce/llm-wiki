@@ -55,13 +55,13 @@ Porting to other CLI-based LLM coding tools is on the roadmap but requires signi
 
 Karpathy's gist is a concept essay. It describes *what* an LLM wiki should do (ingest, query, lint) and why it matters. It does not specify tools, file formats, schemas, or workflows.
 
-llm-wiki is an implementation. It picks Claude Code as the LLM, Logseq or Obsidian as the wiki UI, defines a concrete schema with 5 page types, specifies 9 lint rules with auto-fix behavior, and adds the L1/L2 cache layer that the gist does not mention. Setup takes 5 minutes with `./setup.sh`; the gist is 100% design, 0% code.
+llm-wiki is an implementation. It picks Claude Code as the LLM, Logseq or Obsidian as the wiki UI, defines a concrete schema with 5 page types, specifies 11 lint rules with auto-fix behavior, and adds the L1/L2 cache layer — with two-stage hub-index routing and LRU eviction — that the gist does not mention. Setup takes 5 minutes with `./setup.sh`; the gist is 100% design, 0% code.
 
 If you want the pure concept, read the gist. If you want a working system, use llm-wiki.
 
 ## At what wiki size does this become worth the overhead?
 
-The schema and lint rules feel like overhead at under 20 pages — you could maintain 20 notes by hand. Past 50 pages, the structure starts paying for itself. Past 200, maintaining the wiki without automation is essentially impossible.
+The schema and lint rules feel like overhead at under 20 pages — you could maintain 20 notes by hand. Past 50 pages, the structure starts paying for itself. Past 200, maintaining the wiki without automation is essentially impossible — which is what the two-stage hub-index routing (keeps retrieval precise) and `/wiki prune` (evicts cold pages from the index) are for.
 
 The useful mental model: set up llm-wiki when you expect to cross 50 pages within 6 months. Below that threshold, plain notes are fine.
 

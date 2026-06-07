@@ -137,9 +137,10 @@ For the full deep-dive, see [docs/l1-l2-architecture.md](docs/l1-l2-architecture
 | Command | Description |
 |---------|-------------|
 | `/wiki ingest <source>` | Process a source (URL, file, text), update 5-15 wiki pages |
-| `/wiki query <question>` | Search wiki, synthesize answer with source attribution |
-| `/wiki lint [--fix]` | Health check: orphans, stale pages, broken refs, credential leaks |
-| `/wiki status` | Metrics dashboard: page count, health, recent changes |
+| `/wiki query <question>` | Two-stage search via hub index, synthesize answer with source attribution |
+| `/wiki prune [--months N]` | LRU-Demote: evict cold pages from the live index (default 6 months) |
+| `/wiki lint [--fix]` | Health check: orphans, stale pages, broken refs, index drift, credential leaks |
+| `/wiki status` | Metrics dashboard: page count, health, hot/cold profile, recent changes |
 
 ### Ingest Flow
 
@@ -167,11 +168,15 @@ graph LR
 
 ### Query
 
-Query works like a smart search: Claude parses your question, identifies relevant namespaces and entities, reads the top 3-5 matching pages, and synthesizes an answer with source attribution. If the query reveals a gap in the wiki, it offers to create a new page.
+Query is **two-stage**, the way a CPU resolves an address before touching memory. **Stage 1 (routing):** Claude reads only the hub `### Index` pages of the candidate namespaces — a cheap list of routing lines (`[[page]] -- description #tags`) — and picks the 3 most relevant pages by description. This is the wiki's *page table*. **Stage 2 (read):** it opens only those full pages and synthesizes an answer with source attribution. A full-text grep over every page is the **L3 fallback**, used only when routing finds nothing. Each full-page read is logged to an append-only Access-Log, which feeds `prune`. If the query reveals a gap, it offers to create a new page.
+
+### Prune
+
+Prune is the eviction layer that keeps routing precise as the wiki grows. It reads the Access-Log, finds **cold pages** (no read in N months, default 6), and evicts them from the live index — the routing line moves from the hub `### Index` to `### Archive` and the page is marked `archived::`. This is **demotion, not deletion**: the file stays in place, every incoming `[[link]]` stays valid, and the page is still found by the L3 grep fallback (and re-promoted automatically if queried again). Crucially, prune never renames or moves a file — the wiki tool links by page name, so a move would break every backlink. Run it on a schedule (the command does not self-schedule).
 
 ### Lint
 
-Lint is the automated health check. It scans every wiki page and checks for: orphan pages (no incoming links), stale content (last updated 90+ days ago but still marked high-confidence), missing required properties, broken references to pages that do not exist, and credential patterns that should not be in a git-tracked file. Run with `--fix` and Claude auto-repairs what it can.
+Lint is the automated health check. It scans every wiki page and checks 11 rules: orphan pages (no incoming links), stale content (last updated 90+ days ago but still marked high-confidence), missing required properties, broken references, hub completeness, **index drift** (an active page with no routing line, or a routing line with no page), **archived-in-live-index** (a demoted page still routed), empty pages, weak cross-referencing, credential patterns, and L1/L2 duplicates. Run with `--fix` and Claude auto-repairs what it can — including backfilling missing routing lines into hub indexes.
 
 ## The Schema
 

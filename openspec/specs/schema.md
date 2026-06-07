@@ -90,6 +90,38 @@ lint (validation).
 - REQ-553: Hub pages MUST still have at least 1 outgoing `[[Wiki/...]]` link
   (typically links to their child pages).
 - REQ-554: Every namespace MUST have exactly one hub page.
+- REQ-555: Each hub page MUST carry an `### Index` section: one **routing line** per
+  active child page, formatted `[[Wiki/NS/Page]] -- <description, <=120 chars> #tags`.
+  This index is the retrieval entry point read by `/wiki query` Phase 0 (two-stage routing).
+- REQ-556: Each hub page MAY carry an `### Archive` section holding the routing lines of
+  demoted (cold) child pages. Lint flags an active page in `### Archive`, or a demoted
+  page (see Archived Pages) still in `### Index`.
+- REQ-557: The hub's child list under `### Index` IS the routing index — there is no
+  separate index file. A description after the `--` separator is REQUIRED (it is the
+  routing key); an empty description SHALL be flagged by lint.
+
+### Archived / Demoted Pages
+
+- REQ-565: A page demoted by `/wiki prune` SHALL be marked with the optional property
+  `archived:: <date>` (the date it was evicted from the live index). The presence of
+  `archived::` is the canonical "demoted" marker, valid on ANY page type.
+- REQ-566: For pages whose `status` enum allows it (Entity: `active|inactive|archived`),
+  `status::` SHOULD additionally be set to `archived`. For types whose `status` enum does
+  NOT include `archived` (Project, Knowledge), ONLY the `archived::` property is added —
+  the type's `status` value MUST NOT be set to an out-of-enum value.
+- REQ-567: Demotion SHALL NOT rename or move the page file. The tool links by page name,
+  so a move would break incoming `[[links]]`. A demoted page keeps its filename and
+  location; only its routing line moves from the hub `### Index` to `### Archive`.
+- REQ-568: A demoted page remains greppable as an L3 fallback. If `/wiki query` reads it
+  again, the system SHOULD offer to re-promote it (routing line back to `### Index`,
+  `archived::` removed).
+
+### Access-Log Page
+
+- REQ-569: The wiki SHALL contain a system page `Wiki/Reference/Access-Log` with
+  properties `access-log:: true` and `type:: reference`, holding an append-only `## Log`
+  block. `/wiki query` appends one line per full-page read; `/wiki prune` reads it to
+  compute last-access per page. This page is EXEMPT from orphan, stale, and demote rules.
 
 ### Date Validation
 

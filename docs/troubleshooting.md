@@ -133,16 +133,17 @@ Never commit around the lint by force. The false positive rate is low, and genui
 
 ### The wiki has grown past 200 pages and feels unmanageable
 
-**Cause:** Natural friction at scale. Past ~200 pages, flat namespaces get noisy, hub pages grow long, and the mental model of "what is where" breaks down.
+**Cause:** Natural friction at scale. Past ~200 pages, flat namespaces get noisy, hub pages grow long, and the mental model of "what is where" breaks down. Retrieval also gets imprecise if it relies on grep-over-everything.
 
 **Fix:**
 
+- **Two-stage routing handles retrieval precision automatically.** Since v1.2.0, `/wiki query` reads the hub `### Index` routing lines first and opens only the 3 best-matching pages, rather than grepping every page. Keep each routing line's description terse and distinctive — that is what keeps routing sharp as the wiki grows.
+- **Run `/wiki prune` periodically (default every 6 months).** It evicts cold pages — no read in N months — from the live hub index into `### Archive`, so routing stays focused on the pages you actually use. Eviction never deletes or moves files; demoted pages stay greppable and are re-promoted automatically if queried again.
 - **Split namespaces.** If `Wiki/Tech/` has 50+ pages, consider splitting into `Wiki/Tech/Infrastructure/`, `Wiki/Tech/Languages/`, etc. Namespaces can go 3 levels deep.
-- **Consolidate hubs.** A hub page with 40 child links is useless. Group children into sub-sections with brief descriptions, not just a flat list.
-- **Run `/wiki lint` weekly.** Stale detection reveals pages that have not been updated in 90+ days — candidates for archival or deletion.
+- **Run `/wiki lint --fix`.** Beyond stale detection (90+ days), it now also fixes index drift — backfilling missing routing lines and tidying archived pages left in the live index.
 - **Audit L1/L2.** If you find yourself querying the same L2 page every session, promote the essential part to L1.
 
-The wiki scales, but like any knowledge system, it requires periodic gardening.
+The wiki scales, but like any knowledge system, it requires periodic gardening — now mostly automated by `/wiki prune` and `/wiki lint --fix`.
 
 ### `/wiki lint` keeps flagging the same orphan pages
 

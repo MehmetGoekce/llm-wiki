@@ -1,0 +1,10 @@
+graph LR
+    Q[Question] --> P0[Phase 0<br/>Routing<br/>Read hub Index only]
+    P0 --> PICK{Routing line<br/>matches?}
+    PICK -->|Yes| P1[Phase 1<br/>Read chosen<br/>3-5 full pages]
+    PICK -->|No match| L3[L3 Fallback<br/>Full-text grep<br/>over all pages]
+    L3 --> P1
+    P1 --> LOG[Phase 1b<br/>Append to Access-Log<br/>one line per read]
+    LOG --> SYN[Phase 2<br/>Synthesize<br/>+ source attribution]
+    LOG -. feeds .-> PRUNE[/wiki prune<br/>evict cold pages]
+    PRUNE -. demote .-> ARCH[Hub Archive<br/>archived:: marker<br/>file stays, links intact]

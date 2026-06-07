@@ -47,6 +47,12 @@ A single ingest run targets 5-15 page touches (creates + updates + hub updates).
   New facts SHALL be appended as new blocks below existing content.
 - REQ-033: The system SHALL update hub pages to list any newly created child pages
   in their namespace.
+- REQ-033a: For every page created or updated, the system SHALL set or refresh its
+  routing line in the namespace hub's `### Index` section, formatted
+  `[[Wiki/NS/Page]] -- <one-sentence description, <=120 chars> #tags` (see specs/schema.md
+  and specs/query.md Phase 0). The description is the routing key consumed by two-stage
+  query and MUST be terse and distinctive, not filler. A page without a routing line is
+  unroutable.
 - REQ-034: The system SHALL add `[[Wiki/Namespace/Page]]` cross-references between
   all affected pages. Every page touched MUST have at least 1 outgoing wiki link.
 - REQ-035: The system SHALL set the `updated::` property (or YAML `updated` field)
@@ -68,6 +74,9 @@ A single ingest run targets 5-15 page touches (creates + updates + hub updates).
   for their declared type before completing the ingest.
 - REQ-041: The system SHALL verify that every touched page has at least 1 outgoing
   `[[Wiki/...]]` cross-reference.
+- REQ-041a: The system SHALL verify that every new or updated active page has a
+  routing line in its namespace hub `### Index` (REQ-033a). A missing routing line is
+  a warning (the page is unroutable until `lint --fix` backfills it).
 - REQ-042: The system SHALL scan all created/updated content for credential patterns
   (`token::`, `password::`, `secret::`, `api-key::`, base64 strings of 40+ chars).
   Any match MUST block the ingest and warn the user.
@@ -112,7 +121,8 @@ AND the page SHALL have properties: type:: entity, entity-type:: technology,
     created:: [today], updated:: [today], status:: active, source:: ingest
 AND the page SHALL contain extracted facts about Redis from the URL
 AND the page SHALL have at least 1 [[Wiki/Tech]] cross-reference
-AND the Wiki___Tech.md hub page SHALL be updated to list [[Wiki/Tech/Redis]]
+AND the Wiki___Tech.md hub `### Index` SHALL gain a routing line:
+    "[[Wiki/Tech/Redis]] -- In-memory data store, cache + pub/sub #redis"
 AND the report SHALL show: 1 page created, 1 hub updated, N cross-refs added
 ```
 
@@ -228,6 +238,7 @@ AND the report SHALL note: "Namespace depth limit (3) reached, content merged
 - [ ] New pages have ALL required properties per Schema
 - [ ] Existing pages are never overwritten — only appended to
 - [ ] Hub pages list all child pages after ingest
+- [ ] Every created/updated active page has a routing line in its hub `### Index`
 - [ ] Every touched page has at least 1 cross-reference
 - [ ] Credential patterns block the ingest
 - [ ] Page touch warnings are emitted but do not block

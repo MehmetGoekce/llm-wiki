@@ -10,22 +10,40 @@ knowledge gaps. It is the primary read path — the counterpart to ingest (write
 
 ## Requirements
 
-### Phase 1: Search
+### Phase 0: Routing (Stage 1 — cheap index read)
 
-- REQ-400: The system SHALL parse the user's question to identify relevant
-  namespaces, entity names, and keywords.
-- REQ-401: The system SHALL glob for candidate pages matching identified
-  namespaces (e.g., question about "Strapi" → search Wiki/Tech/ first).
-- REQ-402: The system SHALL grep for keywords across all wiki pages to find
-  matches beyond the primary namespace.
-- REQ-403: The system SHALL read the top 3-5 most relevant pages based on
-  keyword density and namespace match.
+- REQ-440: The system SHALL read `llm-wiki.yml` first to determine tool mode,
+  wiki path, and memory path.
+- REQ-441: The system SHALL parse the user's question to identify candidate
+  namespaces and entity names.
+- REQ-442: The system SHALL read ONLY the hub page of each candidate namespace —
+  NOT every full page in that namespace — to obtain its `### Index` routing lines.
+- REQ-443: The system SHALL match the routing lines (`[[link]] -- description #tags`)
+  in the hub `### Index` against the question and select the 3 most relevant child
+  pages (maximum 5). This two-stage routing is the default retrieval path.
+- REQ-444: The system SHALL treat full-text grep over all wiki pages as an L3
+  FALLBACK, used only when routing yields nothing usable (namespace unclear, hub
+  index missing or empty, or no routing line matches) — NOT as the default path.
+
+### Phase 1: Targeted Read (Stage 2 — only the chosen pages)
+
+- REQ-400: The system SHALL read ONLY the pages selected in Phase 0 (or, on the L3
+  fallback, the top 3-5 grep matches).
 - REQ-404: The system SHALL load at most 3 pages simultaneously (JIT retrieval).
   If more than 3 are relevant, read in batches.
 - REQ-405: The system SHOULD also read L1 Memory files when the question touches
   topics that may have operational rules or gotchas stored there.
-- REQ-406: The system SHALL read `llm-wiki.yml` first to determine tool mode,
-  wiki path, and memory path.
+
+### Phase 1b: Access Logging (LRU signal)
+
+- REQ-450: For each page READ IN FULL (Phase 1, not the Phase 0 hub-index reads),
+  the system SHALL append one line to the Access-Log page (`Wiki/Reference/Access-Log`):
+  `<ISO-date> -- [[Wiki/NS/Page]] -- query`.
+- REQ-451: The Access-Log append SHALL be non-structural — the system MUST NOT create
+  a git commit per query. The append rides along with the next prune/lint/ingest commit.
+- REQ-452: If the L3 fallback reads a page marked `archived::` (a re-hit on an evicted
+  page), the system SHOULD offer to re-promote it: move its routing line from the hub
+  `### Archive` back into `### Index` and remove the archived properties.
 
 ### Phase 2: Synthesize
 
@@ -185,13 +203,54 @@ AND synthesize from all extracted information
 AND list all 7 pages in source attribution
 ```
 
+### Scenario 11: Two-stage routing via hub index
+
+```
+GIVEN the Wiki/Tech hub `### Index` contains:
+    - [[Wiki/Tech/Strapi]] -- Headless CMS, ports, deploy gotchas #strapi #deploy
+    - [[Wiki/Tech/PM2]] -- Process manager, cwd/reload bug #pm2 #deploy
+    - [[Wiki/Tech/Nginx]] -- Reverse proxy, TLS, upstream ports #nginx
+WHEN the user runs /wiki query "what port does Strapi run on?"
+THEN the system SHALL read ONLY the Wiki/Tech hub page in Phase 0
+AND select [[Wiki/Tech/Strapi]] from its routing line description
+AND read ONLY Wiki/Tech/Strapi in Phase 1 (NOT PM2, NOT Nginx, NOT a full-namespace grep)
+AND append "<today> -- [[Wiki/Tech/Strapi]] -- query" to Wiki/Reference/Access-Log
+```
+
+### Scenario 12: L3 fallback when routing finds nothing
+
+```
+GIVEN no hub `### Index` routing line mentions "rate limiting"
+WHEN the user runs /wiki query "how do we handle rate limiting?"
+THEN Phase 0 SHALL return no confident match
+AND the system SHALL fall back to a full-text grep across all wiki pages (L3)
+AND read the top 3-5 grep matches in Phase 1
+```
+
+### Scenario 13: Re-promote an evicted page on re-hit
+
+```
+GIVEN Wiki/Tech/Legacy-Foo has archived:: 2026-06-07 and sits in the Wiki/Tech hub `### Archive`
+AND a full-text grep (L3 fallback) matches it for a new query
+WHEN the system reads Wiki/Tech/Legacy-Foo in full
+THEN the system SHOULD offer: "Wiki/Tech/Legacy-Foo was archived but is relevant again —
+    re-promote it to the live index?"
+AND on confirmation SHALL move its routing line from `### Archive` to `### Index`
+AND remove the archived:: property and reset status::
+```
+
 ---
 
 ## Acceptance Criteria
 
-- [ ] All 4 phases execute in order (Search, Synthesize, Write-Back, Output)
-- [ ] Namespace-aware search (question about tech → search Wiki/Tech/ first)
+- [ ] Phase 0 routing reads ONLY hub index pages, not full namespace contents
+- [ ] Phase 1 reads ONLY the pages selected by routing (or grep matches on fallback)
+- [ ] Full-text grep is the L3 fallback, not the default retrieval path
+- [ ] All phases execute in order (Routing, Targeted Read, Access Logging, Synthesize, Write-Back, Output)
 - [ ] Max 3 pages loaded simultaneously
+- [ ] Every full-page read appends one line to the Access-Log
+- [ ] Access-Log append does NOT trigger a per-query git commit
+- [ ] Re-hit on an archived page offers re-promotion
 - [ ] Answers synthesized from multiple sources (not raw dumps)
 - [ ] Confidence levels checked and low-confidence flagged
 - [ ] Staleness checked and old sources flagged (90-day threshold)
@@ -207,6 +266,8 @@ AND list all 7 pages in source attribution
 ## Dependencies
 
 - `llm-wiki.yml` must exist and be valid (see specs/config.md)
-- specs/schema.md defines valid page properties checked during synthesis
-- specs/ingest.md Phase 3 rules apply to write-back operations
+- specs/schema.md defines valid page properties checked during synthesis, the hub
+  `### Index`/`### Archive` structure, and the Access-Log page
+- specs/ingest.md Phase 3 rules apply to write-back operations and maintain routing lines
+- specs/prune.md defines LRU-Demote, which consumes the Access-Log this command writes
 - specs/l1-l2-routing.md defines when L1 Memory is relevant

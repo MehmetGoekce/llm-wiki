@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-06-07
+
+Two retrieval-scaling mechanisms, the CPU-cache analogy carried through to the index
+and eviction layers. As a wiki grows past a few dozen pages, grep-over-everything gets
+imprecise; these keep retrieval sharp.
+
+### Added
+
+- **Hub-Index-Routing** — two-stage `query`. Each hub page carries an `### Index` of
+  routing lines (`[[page]] -- description #tags`); query reads the cheap index first,
+  picks the 3 best pages by description, then reads only those. Full-text grep becomes
+  the L3 fallback. `ingest` maintains the routing line for every page (the wiki's page table).
+- **LRU-Demote** — new `/wiki prune [--months N]` command. `query` appends every full-page
+  read to an append-only `Wiki/Reference/Access-Log`; `prune` evicts pages with no access
+  in N months (default 6) from the live index into the hub `### Archive`, marked `archived::`.
+  Eviction never deletes, renames, or moves a file — incoming `[[links]]` stay valid and the
+  page is still greppable (L3). Re-promotion is automatic on re-hit.
+- `openspec/specs/prune.md` — new spec (EARS requirements + BDD scenarios)
+- Lint rules 10 (Index Drift) and 11 (Archived-in-Live-Index), both auto-fixable;
+  `lint --fix` now backfills missing routing lines into hub indexes
+- `status` now reports a hot/cold cache profile (most-queried pages, demote-ready cold pages)
+- Access-Log page templates for Logseq and Obsidian; `setup.sh` scaffolds the Access-Log page
+
+### Changed
+
+- Hub page templates (Logseq + Obsidian) now include `### Index` and `### Archive` sections
+- `docs/schema-reference.md` — Hub example updated; new "Hub-Index-Routing & LRU-Demote" section
+- Specs updated: `query.md` (Phase 0 routing + Phase 1b access logging), `ingest.md`
+  (routing-line maintenance), `lint.md` (11 rules), `schema.md` (hub index, `archived::`
+  marker, Access-Log page)
+
+### Notes
+
+- Backward compatible. Existing wikis keep working; run `/wiki lint --fix` once to backfill
+  routing lines into hubs that predate this release.
+- `archived::` is the canonical demote marker and is valid on any page type. `status:: archived`
+  is set additionally only where the type's status enum allows it (Entity).
+
 ## [1.1.1] - 2026-04-18
 
 ### Added
@@ -66,6 +104,7 @@ First stable release.
 - Credential leak detection (lint rule 6) scans for tokens, passwords, secrets
 - L1/L2 security boundary: credentials stay in L1 (git-excluded), wiki is git-tracked
 
+[1.2.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MehmetGoekce/llm-wiki/releases/tag/v1.0.0

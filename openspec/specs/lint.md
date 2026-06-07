@@ -4,7 +4,7 @@
 
 The lint command scans all wiki pages for structural issues, data quality problems,
 and security concerns. It reports findings grouped by severity and can auto-fix
-certain issues when run with the `--fix` flag. There are 9 lint rules.
+certain issues when run with the `--fix` flag. There are 11 lint rules.
 
 ---
 
@@ -108,6 +108,27 @@ certain issues when run with the `--fix` flag. There are 9 lint rules.
 - REQ-191: The system SHALL flag cases where substantially the same information
   exists in both L1 memory and L2 wiki.
 - REQ-192: No auto-fix (requires human decision on which location is authoritative).
+
+### Rule 10: Index Drift
+
+- REQ-193: The system SHALL flag a routing line in a hub `### Index` whose target
+  page does not exist on disk (orphaned routing line).
+- REQ-194: The system SHALL flag an active (non-archived) page that has no routing
+  line in its namespace hub `### Index` (unroutable — only findable via L3 grep).
+- REQ-195: The system SHALL flag a routing line that has no description text after
+  the `--` separator (a routing key cannot be empty).
+- REQ-196: Auto-fix (--fix): for an unroutable page, the system SHALL backfill a
+  routing line into the hub `### Index`, deriving the description from the page
+  title and first content block and copying the page's existing `#tags`. For an
+  orphaned routing line, the system SHALL remove it.
+
+### Rule 11: Archived-in-Live-Index
+
+- REQ-197: The system SHALL flag a demoted page (marked `archived::`, see specs/schema.md
+  REQ-565) whose routing line is still in the hub `### Index` instead of `### Archive`
+  (an unclean prune).
+- REQ-198: Auto-fix (--fix): the system SHALL move the routing line from `### Index`
+  to `### Archive`. It MUST NOT rename or move the page file (links are by page name).
 
 ### Reporting
 
@@ -242,15 +263,39 @@ THEN the system SHALL flag as "L1/L2 duplicate" (info)
 AND suggest: "Same info in L1 memory and L2 wiki. Decide which is authoritative."
 ```
 
+### Scenario 11: Index drift — unroutable page backfilled
+
+```
+GIVEN a page Wiki___Tech___Redis.md exists and is active (not archived)
+AND the Wiki/Tech hub `### Index` has no routing line for [[Wiki/Tech/Redis]]
+WHEN the user runs /wiki lint --fix
+THEN the system SHALL flag Wiki/Tech/Redis as "index drift: unroutable" (warning)
+AND backfill a routing line into the Wiki/Tech hub `### Index`:
+    "[[Wiki/Tech/Redis]] -- <description from title + first block> #<existing tags>"
+```
+
+### Scenario 12: Archived page still in the live index
+
+```
+GIVEN Wiki___Tech___Legacy-Foo.md has archived:: 2026-06-07 (and status:: archived, an entity page)
+AND its routing line still sits in the Wiki/Tech hub `### Index`
+WHEN the user runs /wiki lint --fix
+THEN the system SHALL flag it as "archived-in-live-index" (warning)
+AND move the routing line from `### Index` to `### Archive`
+AND NOT rename or move the Legacy-Foo page file
+```
+
 ---
 
 ## Acceptance Criteria
 
-- [ ] All 9 rules execute during a lint run
+- [ ] All 11 rules execute during a lint run
 - [ ] Findings grouped by severity: critical > warning > info
 - [ ] Report includes totals (pages scanned, healthy, issues by rule)
-- [ ] Auto-fix (--fix) only modifies rules 1, 2, 4, 5, 8 (the 5 auto-fixable rules)
+- [ ] Auto-fix (--fix) only modifies rules 1, 2, 4, 5, 8, 10, 11 (the 7 auto-fixable rules)
 - [ ] Rules 3, 6, 7, 9 never auto-fix (require human judgment)
+- [ ] Index Drift (rule 10) backfills unroutable pages and removes orphaned routing lines
+- [ ] Archived-in-Live-Index (rule 11) moves routing lines but never renames/moves page files
 - [ ] Credential detection is case-insensitive and scans both content and frontmatter
 - [ ] Stale detection uses exact 90-day threshold from updated:: to today
 - [ ] Hub completeness checks ALL child pages, not just recently created ones

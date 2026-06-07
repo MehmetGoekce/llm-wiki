@@ -240,7 +240,7 @@ After:  pages/Wiki___Tech___Strapi.md
 
 ## Dual-Format Support in the Schema
 
-The schema itself is wiki-app-agnostic at the conceptual level. The same 5 page types, 8 namespaces, and 9 lint rules apply regardless of whether you use Logseq or Obsidian. The only differences are in serialization:
+The schema itself is wiki-app-agnostic at the conceptual level. The same 5 page types, 8 namespaces, and 11 lint rules apply regardless of whether you use Logseq or Obsidian. The hub-index routing and LRU-demote mechanisms are likewise tool-agnostic. The only differences are in serialization:
 
 | Schema Concept | Logseq Serialization | Obsidian Serialization |
 |----------------|---------------------|----------------------|
