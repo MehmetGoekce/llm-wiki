@@ -159,6 +159,6 @@ The L1/L2 boundary is not static. As your wiki grows, some knowledge migrates:
 - **Merge**: Two L1 files cover related gotchas. Combine them into one to keep L1 lean.
 - **Archive**: A project completes. Its L1 gotchas become L2 historical notes.
 
-The `/wiki lint` command helps with this evolution by flagging anomalies: L1 files that have not been referenced in 90 days, L2 pages that get queried in every session (suggesting they should be L1), and duplicates that need resolution.
+Today `/wiki lint` automates one part of this: it flags L1/L2 duplicates that need resolution. Promotion and demotion themselves are manual decisions. Access-based eviction (`/wiki prune`) only covers L2, because every L1 file loads every session and therefore produces no usage signal. A stale L1 rule does not show up as cold; it shows up as the agent confidently acting on an outdated assumption. That is why every L1 rule should carry a *Why* line: when it misfires, you can check whether the reason still holds, then demote it to L2 as history or delete it. Automatic L1 demotion candidates (REQ-353 in `openspec/specs/l1-l2-routing.md`) are specified but not yet implemented.
 
 The goal is a lean L1 and a rich L2. Keep the fast cache small and hot. Let the wiki grow without bounds.

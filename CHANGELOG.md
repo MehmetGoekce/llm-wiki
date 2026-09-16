@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `docs/l1-l2-architecture.md`: removed the claim that `/wiki lint` flags L1 files unreferenced for 90 days and L2 pages queried in every session. Neither is implemented; lint only flags L1/L2 duplicates. The section now explains why access-based eviction cannot see L1 staleness and marks REQ-353 as specified but not implemented.
+
 ## [1.3.0] - 2026-06-08
 
 Routing transparency. The Access-Log already recorded which pages a query pulled; now it
@@ -132,6 +138,8 @@ First stable release.
 - Credential leak detection (lint rule 6) scans for tokens, passwords, secrets
 - L1/L2 security boundary: credentials stay in L1 (git-excluded), wiki is git-tracked
 
+[Unreleased]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.0.0...v1.1.0
