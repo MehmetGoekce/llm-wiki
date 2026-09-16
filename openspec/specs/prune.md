@@ -14,6 +14,13 @@ the counterpart to query (read path) and ingest (write path).
 prune is meant to run on a schedule (default cadence: 6 months). The command itself
 does NOT self-schedule; the user wires it via their own scheduler.
 
+`/wiki prune --l1` is a separate mode for L1 memory. Access frequency cannot find stale
+L1 rules (every L1 file is loaded every session), so this mode works on claim class and
+verification date (specs/l1-l2-routing.md REQ-370-379): it classifies unclassified
+files, checks due behavior claims against read-only evidence, and lets the user
+re-verify, demote to L2, or delete each one. `--l1` does NOT run the L2 index eviction,
+and plain `/wiki prune` does NOT touch L1.
+
 ---
 
 ## Requirements
@@ -58,6 +65,79 @@ does NOT self-schedule; the user wires it via their own scheduler.
   appends (which are non-structural and not committed per-query).
 - REQ-622: The system SHALL note when the next prune is due (N months out). It MUST NOT
   create a scheduler entry itself.
+
+### L1 Mode (`--l1`)
+
+#### Phase L1-1: Scope
+
+- REQ-900: `/wiki prune --l1` SHALL require `memory_path`. If it is absent, the system
+  SHALL display "memory_path not configured — L1 mode unavailable." and abort.
+- REQ-901: The system SHALL skip the L1 index file (specs/l1-l2-routing.md REQ-377).
+- REQ-902: The batch size SHALL default to 10 and be overridable via `--batch N`. The
+  verification window SHALL default to `l1_verify_days` and be overridable via
+  `--days N`.
+- REQ-903: Every write in L1 mode SHALL require confirmation. L1 is not git-tracked:
+  there is no undo. Before any delete or demote, the system SHALL show the full file
+  content it is about to remove.
+
+#### Phase L1-2: Classify
+
+- REQ-905: For up to one batch of unclassified files, the system SHALL propose a value
+  for `asserts-current-behavior` (true/false) with a one-line reason per file, applying
+  the definitions in specs/l1-l2-routing.md REQ-371-372.
+- REQ-906: The user SHALL be able to confirm the whole batch or override individual
+  proposals. Only confirmed values SHALL be written (specs/l1-l2-routing.md REQ-376 placement rules apply).
+- REQ-907: Classification MUST NOT set `verified`. A newly classified behavior claim
+  is due until evidence has been checked.
+- REQ-908: A file whose content is mixed (a decision plus a behavior claim) SHOULD be
+  classified `true` and the proposal SHOULD suggest splitting it into two files.
+
+#### Phase L1-3: Gather Evidence
+
+- REQ-910: For each due rule (up to one batch, oldest `verified` first, never-verified
+  before dated), the system SHALL extract the concrete, checkable elements the rule
+  names: file paths, commands, flags, versions, ports, config keys, URLs.
+- REQ-911: Evidence gathering MUST be read-only: checking file existence, reading
+  files, searching file contents, reading dependency manifests, and running commands
+  only with read-only informational flags (`--version`, `--help`). The system MUST NOT
+  run commands with side effects, write to disk, deploy, or change remote state.
+- REQ-912: The system SHALL report one verdict per rule — `supports`, `contradicts`, or
+  `inconclusive` — with the evidence behind it (what was checked, what was found).
+- REQ-913: A rule whose elements cannot be checked locally (external service behavior,
+  pricing, third-party policy) SHALL be reported `inconclusive` with the reason
+  "not locally verifiable". The system MUST NOT fetch remote content to decide.
+- REQ-914: Evidence output MUST NOT include credential values. For a rule that holds
+  a credential, the system SHALL report only whether the referenced location exists.
+- REQ-915: The system MUST NOT decide on its own. A verdict is input for the user,
+  not an action.
+
+#### Phase L1-4: Act (per rule, user choice)
+
+- REQ-920: The system SHALL offer three actions per due rule: **re-verify**, **demote
+  to L2**, **delete**. It SHALL recommend one based on the verdict: `supports` →
+  re-verify; `contradicts` → demote (history still useful) or delete; `inconclusive`
+  → re-verify only if the user confirms the claim from their own knowledge.
+- REQ-921: **Re-verify** SHALL set `verified: <today>`. If the verdict is
+  `contradicts`, re-verify SHALL only be offered together with a proposed corrected
+  rule text, and both SHALL be written together on confirmation.
+- REQ-922: **Demote to L2** SHALL route the rule's content through the normal ingest
+  path (specs/ingest.md): append it as a history block to the most relevant wiki page
+  found via hub-index routing, or create a page if none fits. The block SHALL carry
+  `source:: l1-demotion` and the date. Only after the wiki write succeeds SHALL the
+  system delete the L1 file and remove its line from the L1 index file.
+- REQ-923: A rule containing a credential MUST NOT be demoted to L2
+  (specs/l1-l2-routing.md REQ-312). Only re-verify and delete SHALL be offered.
+- REQ-924: **Delete** SHALL remove the L1 file and its line from the L1 index file.
+- REQ-925: Choosing none of the three (skip) SHALL leave the file untouched; it stays
+  due and reappears in the next run.
+
+#### Phase L1-5: Report + Commit
+
+- REQ-928: The system SHALL report counts: classified (true/false), re-verified,
+  demoted, deleted, skipped, and remaining unclassified and due files.
+- REQ-929: The system SHALL create a git commit for wiki pages changed by demotion
+  (plus pending Access-Log appends). L1 changes are not committed (L1 is git-excluded,
+  specs/l1-l2-routing.md REQ-330).
 
 ---
 
@@ -134,6 +214,72 @@ AND move the routing line within the Wiki/Tech hub (Wiki/Tech/_index.md) from
 AND keep the file at Wiki/Tech/Legacy-Foo.md (no move)
 ```
 
+### Scenario 8: L1 classification batch
+
+```
+GIVEN memory_path holds 25 unclassified L1 files
+WHEN the user runs /wiki prune --l1
+THEN the system SHALL propose asserts-current-behavior values for 10 files, each with a reason
+    e.g. "feedback_pm2_reload.md → true (claims PM2 reload fails with npm start)"
+         "feedback_no_ai_attribution.md → false (records a preference)"
+AND on confirmation SHALL write only the key, without verified
+AND report 15 files still unclassified
+```
+
+### Scenario 9: Evidence contradicts a rule
+
+```
+GIVEN feedback_hook_path.md (asserts-current-behavior: true, verified: 2026-02-01) says
+    "the hook lives at ~/.claude/hooks/rtk-rewrite.sh"
+AND that path does not exist, but settings.json references ~/Projekte/tools/rtk/hooks/rtk-rewrite.sh
+WHEN the user runs /wiki prune --l1
+THEN the system SHALL report verdict contradicts, with both paths as evidence
+AND recommend demote or delete
+AND offer re-verify only together with a corrected rule text naming the new path
+AND write nothing until the user chooses
+```
+
+### Scenario 10: Not locally verifiable
+
+```
+GIVEN reference_hosting_prices.md (asserts-current-behavior: true, no verified) states a monthly price
+WHEN the user runs /wiki prune --l1
+THEN the system SHALL report verdict inconclusive — "not locally verifiable"
+AND NOT fetch the provider website
+```
+
+### Scenario 11: Demote to L2
+
+```
+GIVEN feedback_old_deploy_flow.md is due and the verdict is contradicts
+AND the user chooses demote
+WHEN the system executes the action
+THEN it SHALL show the full file content first
+AND append a history block with source:: l1-demotion to the page routed via the hub index
+    (e.g. Wiki/Tech/Deployment)
+AND only then delete feedback_old_deploy_flow.md and its MEMORY.md line
+AND commit the wiki change
+```
+
+### Scenario 12: Credential rule cannot be demoted
+
+```
+GIVEN reference_strapi_credentials.md is due
+WHEN the user runs /wiki prune --l1
+THEN the evidence SHALL show only whether the referenced location exists, never the value
+AND the offered actions SHALL be re-verify and delete only
+```
+
+### Scenario 13: Modes are separate
+
+```
+GIVEN cold L2 pages and due L1 rules both exist
+WHEN the user runs /wiki prune
+THEN only L2 index eviction SHALL run
+WHEN the user runs /wiki prune --l1
+THEN only L1 classification and verification SHALL run
+```
+
 ---
 
 ## Acceptance Criteria
@@ -149,6 +295,13 @@ AND keep the file at Wiki/Tech/Legacy-Foo.md (no move)
 - [ ] Re-promotion is query's responsibility, not prune's
 - [ ] Structural change committed; next-prune date reported (no self-scheduling)
 - [ ] Works in both Logseq and Obsidian modes
+- [ ] `--l1` requires memory_path and never runs L2 eviction; plain prune never touches L1
+- [ ] Classification proposes, user confirms, verified is never set by classification
+- [ ] Evidence gathering is strictly read-only and local; no remote fetches
+- [ ] Every rule gets a verdict (supports / contradicts / inconclusive) with evidence
+- [ ] Three actions per rule, nothing written without confirmation, full content shown before removal
+- [ ] Demote writes to L2 first, deletes L1 only after the wiki write succeeds
+- [ ] Credential rules: never demoted, values never printed
 
 ---
 
@@ -160,3 +313,6 @@ AND keep the file at Wiki/Tech/Legacy-Foo.md (no move)
 - specs/query.md writes the Access-Log this command consumes and owns re-promotion
 - specs/lint.md rules 10-11 detect index drift and archived-in-live-index left by an
   interrupted prune
+- specs/l1-l2-routing.md REQ-370-379 define claim class, verification date, and due rules
+  for `--l1`; specs/lint.md Rule 12 reports them; specs/config.md REQ-660 sets the window
+- specs/ingest.md is reused by the demote-to-L2 action

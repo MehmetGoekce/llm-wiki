@@ -55,7 +55,7 @@ Porting to other CLI-based LLM coding tools is on the roadmap but requires signi
 
 Karpathy's gist is a concept essay. It describes *what* an LLM wiki should do (ingest, query, lint) and why it matters. It does not specify tools, file formats, schemas, or workflows.
 
-llm-wiki is an implementation. It picks Claude Code as the LLM, Logseq or Obsidian as the wiki UI, defines a concrete schema with 5 page types, specifies 11 lint rules with auto-fix behavior, and adds the L1/L2 cache layer — with two-stage hub-index routing and LRU eviction — that the gist does not mention. Setup takes 5 minutes with `./setup.sh`; the gist is 100% design, 0% code.
+llm-wiki is an implementation. It picks Claude Code as the LLM, Logseq or Obsidian as the wiki UI, defines a concrete schema with 5 page types, specifies 12 lint rules with auto-fix behavior, and adds the L1/L2 cache layer — with two-stage hub-index routing, LRU eviction for L2, and claim-class verification for L1 — that the gist does not mention. Setup takes 5 minutes with `./setup.sh`; the gist is 100% design, 0% code.
 
 If you want the pure concept, read the gist. If you want a working system, use llm-wiki.
 

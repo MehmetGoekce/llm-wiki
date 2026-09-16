@@ -4,7 +4,7 @@
 
 The lint command scans all wiki pages for structural issues, data quality problems,
 and security concerns. It reports findings grouped by severity and can auto-fix
-certain issues when run with the `--fix` flag. There are 11 lint rules.
+certain issues when run with the `--fix` flag. There are 12 lint rules.
 
 ---
 
@@ -129,6 +129,24 @@ certain issues when run with the `--fix` flag. There are 11 lint rules.
   (an unclean prune).
 - REQ-198: Auto-fix (--fix): the system SHALL move the routing line from `### Index`
   to `### Archive`. It MUST NOT rename or move the page file (links are by page name).
+
+### Rule 12: L1 Verification Due
+
+- REQ-220: If `memory_path` is configured, the system SHALL scan every L1 memory file
+  except the index file (see specs/l1-l2-routing.md REQ-377). If `memory_path` is
+  absent, the rule SHALL be skipped silently.
+- REQ-221: The system SHALL flag every L1 rule that is due for verification
+  (specs/l1-l2-routing.md REQ-374) as a warning, reporting: file name, `verified` date
+  (or "never"), and age in days.
+- REQ-222: The system SHALL report the number of unclassified L1 files (no
+  `asserts-current-behavior` key) as a single info finding, not one finding per file.
+- REQ-223: Rules with `asserts-current-behavior: false` SHALL never be flagged by
+  this rule, regardless of age.
+- REQ-224: No auto-fix. The finding SHALL suggest `/wiki prune --l1`. Rule 12 MUST NOT
+  write to L1 files, even with `--fix` (L1 is not git-tracked; writes need per-item
+  confirmation).
+- REQ-225: The system MUST NOT print the body of L1 files in the lint report (L1 may
+  hold credentials); file names and dates only.
 
 ### Reporting
 
@@ -285,15 +303,44 @@ AND move the routing line from `### Index` to `### Archive`
 AND NOT rename or move the Legacy-Foo page file
 ```
 
+### Scenario 13: L1 verification due
+
+```
+GIVEN memory_path contains:
+    feedback_pm2_reload.md   (asserts-current-behavior: true, verified: 2026-01-10)
+    feedback_rtk_hook.md     (asserts-current-behavior: true, no verified)
+    feedback_no_ai.md        (asserts-current-behavior: false)
+    user_address.md          (no asserts-current-behavior key)
+    MEMORY.md                (index)
+AND today is 2026-06-15 and l1_verify_days is 90
+WHEN the user runs /wiki lint
+THEN the system SHALL flag feedback_pm2_reload.md (verified 2026-01-10, 156 days) (warning)
+AND flag feedback_rtk_hook.md (verified never) (warning)
+AND NOT flag feedback_no_ai.md
+AND report "1 unclassified L1 file — run /wiki prune --l1 to classify" (info)
+AND NOT inspect MEMORY.md
+AND NOT print any L1 file body
+```
+
+### Scenario 14: Rule 12 with --fix writes nothing
+
+```
+GIVEN the same L1 state as Scenario 13
+WHEN the user runs /wiki lint --fix
+THEN the system SHALL report the same Rule 12 findings
+AND NOT modify any L1 file
+```
+
 ---
 
 ## Acceptance Criteria
 
-- [ ] All 11 rules execute during a lint run
+- [ ] All 12 rules execute during a lint run (Rule 12 only when memory_path is set)
 - [ ] Findings grouped by severity: critical > warning > info
 - [ ] Report includes totals (pages scanned, healthy, issues by rule)
 - [ ] Auto-fix (--fix) only modifies rules 1, 2, 4, 5, 8, 10, 11 (the 7 auto-fixable rules)
-- [ ] Rules 3, 6, 7, 9 never auto-fix (require human judgment)
+- [ ] Rules 3, 6, 7, 9, 12 never auto-fix (require human judgment)
+- [ ] Rule 12 reports due L1 rules and the unclassified count without printing L1 bodies
 - [ ] Index Drift (rule 10) backfills unroutable pages and removes orphaned routing lines
 - [ ] Archived-in-Live-Index (rule 11) moves routing lines but never renames/moves page files
 - [ ] Credential detection is case-insensitive and scans both content and frontmatter

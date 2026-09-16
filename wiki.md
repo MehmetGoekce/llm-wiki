@@ -15,12 +15,22 @@ Persistent knowledge management powered by Claude Code. Maintains a structured w
   the live index. Eviction != deletion: the file stays (marked `archived::`), still greppable as an L3
   fallback, all `[[links]]` intact. Access-frequency eviction — the missing CPU-cache mechanism.
 
+**One mechanism keeps L1 honest:**
+- **L1-Verification** — access frequency cannot find stale L1 rules: every L1 file loads every session, so
+  a stale rule never looks cold. It shows up as the agent confidently acting on an outdated assumption.
+  L1 files therefore carry a claim class: `asserts-current-behavior: true` (a path, command, flag, version,
+  quirk — can silently go stale) or `false` (a decision, preference, identity — never stale), plus
+  `verified: <date>` for behavior claims. `lint` reports claims past `l1_verify_days`; `prune --l1` checks
+  them against read-only evidence and lets the user re-verify, demote to L2, or delete.
+
 ## Arguments
 
 ```
 /wiki ingest <source>        Process source, create/update wiki pages
 /wiki query <question>       Search wiki (two-stage via hub index), synthesize answer
 /wiki prune [--months N]     LRU-Demote: evict cold pages from the live index (default 6 months)
+/wiki prune --l1 [--batch N] [--days N]
+                             L1-Verification: classify L1 rules, check due claims, re-verify/demote/delete
 /wiki lint [--fix]           Health check: orphans, stale, broken refs, index drift
 /wiki status                 Wiki metrics and health overview (incl. hot/cold profile)
 /wiki import                 Import existing notes into wiki format
@@ -39,7 +49,9 @@ Read `llm-wiki.yml` from the wiki root directory FIRST to determine:
 - `tool`: logseq or obsidian
 - `wiki_path`: path to the graph/vault
 - `pages_dir`: where pages live (relative to wiki_path)
-- `memory_path`: L1 memory directory
+- `memory_path`: L1 memory directory (optional; without it, L1 features are skipped)
+- `l1_verify_days`: days until an L1 behavior claim is due for re-verification (optional, default 90;
+  invalid value -> warn and use 90)
 - `namespaces`: configured top-level namespaces
 
 ## Tool-Specific Format Rules
@@ -184,6 +196,59 @@ Phase 3 - Report + Commit:
   - Git commit (structural change: hub index + page properties)
   - Note: next prune due in N months — user may wire it via their scheduler
 
+## Workflow: prune --l1 (L1-Verification)
+
+Purpose: find L1 rules that make claims about current behavior and check them against evidence before
+they keep steering sessions. Separate from L2 eviction: `prune --l1` never evicts L2 pages, plain `prune`
+never touches L1. L1 is NOT git-tracked — there is no undo, so every write needs confirmation.
+
+Phase 1 - Scope:
+  - Read llm-wiki.yml first. No `memory_path` -> "memory_path not configured — L1 mode unavailable." and abort
+  - Scan every L1 memory file EXCEPT the index file (e.g. MEMORY.md — an index, not a rule)
+  - Batch size 10 (`--batch N`); window = `l1_verify_days` (`--days N` overrides)
+  - Read `asserts-current-behavior` and `verified` from the frontmatter top level OR a `metadata:` block
+
+Phase 2 - Classify (up to one batch of unclassified files — no `asserts-current-behavior` key):
+  - Propose true/false per file with a one-line reason:
+    - true = falsifiable claim about a system's current state (path, command, flag, version, port, API,
+      tool quirk, external behavior)
+    - false = decision, preference, identity fact, or rationale
+  - Mixed file (decision + behavior claim) -> propose true and suggest splitting it into two files
+  - User confirms the batch or overrides single items. Write ONLY confirmed values
+  - NEVER set `verified` while classifying — a new behavior claim stays due until evidence is checked
+
+Phase 3 - Gather Evidence (up to one batch of due rules; never-verified first, then oldest verified):
+  - Due = `asserts-current-behavior: true` AND (`verified` missing OR older than the window)
+  - Extract what the rule names: file paths, commands, flags, versions, ports, config keys, URLs
+  - READ-ONLY and LOCAL: check existence, read files, search contents, read dependency manifests, run
+    commands only with `--version` / `--help`. NEVER run commands with side effects, write, deploy, or
+    touch remote state. NEVER fetch remote content
+  - Verdict per rule: `supports` / `contradicts` / `inconclusive`, with what was checked and what was found
+  - Not checkable locally (external service, pricing, third-party policy) -> `inconclusive`,
+    "not locally verifiable"
+  - Credential rules: report only whether the referenced location exists — NEVER print the value
+  - The verdict is input for the user, not an action
+
+Phase 4 - Act (per rule, user chooses):
+  - Recommend by verdict: supports -> re-verify; contradicts -> demote (history still useful) or delete;
+    inconclusive -> re-verify only if the user confirms the claim from their own knowledge
+  - **Re-verify:** set `verified: <today>`. On `contradicts`, offer it ONLY together with a corrected rule
+    text; write both together
+  - **Demote to L2:** show the full file content first. Append it as a history block (`source:: l1-demotion`,
+    date) to the most relevant wiki page found via hub-index routing — or create a page via the ingest path.
+    ONLY after the wiki write succeeds: delete the L1 file and remove its line from the L1 index file.
+    Credential rules are NEVER demoted (only re-verify or delete)
+  - **Delete:** show the full file content first, then remove the L1 file and its index line
+  - Skip -> file untouched, stays due for the next run
+
+Phase 5 - Report + Commit:
+  - Counts: classified (true/false), re-verified, demoted, deleted, skipped; remaining unclassified + due
+  - Git commit for wiki pages changed by demotion (plus pending Access-Log appends). L1 is git-excluded —
+    nothing to commit there
+
+Out of scope: warning at the moment a due rule is about to justify an action. Claude Code loads L1, not
+llm-wiki — there is no hook to enforce that gate, so do not claim one.
+
 ## Workflow: lint
 
 Phase 1 - Scan:
@@ -205,6 +270,12 @@ Phase 2 - Check Rules (from Schema):
   - Empty Pages: pages with only properties, no content
   - Cross-ref Minimum: pages with fewer than 1 outgoing [[link]]
   - L1/L2 Duplicates: same info in Memory AND Wiki -> warning
+  - L1 Verification Due (only if `memory_path` is set; skip the L1 index file):
+    - warning per L1 file with `asserts-current-behavior: true` and `verified` missing or older than
+      `l1_verify_days` — report file name, verified date (or "never"), age in days
+    - info: ONE line with the count of unclassified L1 files (no `asserts-current-behavior` key)
+    - `asserts-current-behavior: false` is never flagged, regardless of age
+    - never print L1 file bodies (L1 may hold credentials); suggest `/wiki prune --l1`
 
 Phase 3 - Report:
   - Group findings by severity (critical, warning, info)
@@ -221,6 +292,7 @@ Phase 4 - Auto-Fix (only with --fix flag):
   - Downgrade stale confidence from high to stale
   - Create stub pages for broken [[links]]
   - Add cross-references where obvious connections exist
+  - NEVER write to L1 files, not even with --fix (L1 Verification Due has no auto-fix)
   - Git commit after fixes
 
 Phase 5 - Dashboard Update:
@@ -351,6 +423,36 @@ Rules:
 - prune/status parse the date + `[[page]]` from fixed positions (split on ` -- `); the `matched:` suffix is
   irrelevant to LRU aggregation and does not affect parsing
 - This page is exempt from orphan / stale / demote rules
+
+## L1 Frontmatter (format)
+
+L1 memory files keep their existing frontmatter; llm-wiki adds two optional keys. Top level:
+```
+---
+name: pm2-reload-npm-start
+description: PM2 reload breaks when the app was started via npm start
+asserts-current-behavior: true
+verified: 2026-06-15
+---
+```
+
+Or inside an existing `metadata:` block (write where the file already keeps its metadata):
+```
+---
+name: no-ai-attribution
+description: No AI attribution in commits or published content
+metadata:
+  type: feedback
+  asserts-current-behavior: false
+---
+```
+
+Rules:
+- `true` = claim about a system's current state; `false` = decision / preference / identity / rationale
+- `verified` only on `true` rules, ISO date, set only by re-verify in `prune --l1`
+- No key = unclassified: counted by lint, never flagged as due
+- Writes MUST NOT reorder or remove other frontmatter keys
+- The L1 index file (e.g. MEMORY.md) carries neither key
 </formats>
 
 <constraints>
@@ -364,6 +466,8 @@ Rules:
   prune/lint/ingest commit (avoids read-churn in the git-tracked wiki)
 - Every active page belongs in exactly one hub `### Index` — ingest sets the routing line, else the page
   is unroutable (only findable via L3 grep). lint --fix backfills missing lines
+- L1 is NOT git-tracked: every L1 write (classify, re-verify, demote, delete) needs per-item confirmation;
+  show the full file content before removing one. Evidence checks are read-only and local
 - ALWAYS read llm-wiki.yml first to determine tool and paths
 - ALWAYS use correct format for the configured tool (outliner vs. flat markdown)
 - Properties: tool-specific (property:: value for Logseq, YAML frontmatter for Obsidian)

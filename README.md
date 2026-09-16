@@ -139,7 +139,8 @@ For the full deep-dive, see [docs/l1-l2-architecture.md](docs/l1-l2-architecture
 | `/wiki ingest <source>` | Process a source (URL, file, text), update 5-15 wiki pages |
 | `/wiki query <question>` | Two-stage search via hub index, synthesize answer with source attribution |
 | `/wiki prune [--months N]` | LRU-Demote: evict cold pages from the live index (default 6 months) |
-| `/wiki lint [--fix]` | Health check: orphans, stale pages, broken refs, index drift, credential leaks |
+| `/wiki prune --l1` | L1-Verification: classify L1 rules, check due behavior claims against local evidence, re-verify / demote / delete |
+| `/wiki lint [--fix]` | Health check: orphans, stale pages, broken refs, index drift, credential leaks, due L1 claims |
 | `/wiki status` | Metrics dashboard: page count, health, hot/cold profile, recent changes |
 
 ### Ingest Flow
@@ -174,9 +175,11 @@ Query is **two-stage**, the way a CPU resolves an address before touching memory
 
 Prune is the eviction layer that keeps routing precise as the wiki grows. It reads the Access-Log, finds **cold pages** (no read in N months, default 6), and evicts them from the live index — the routing line moves from the hub `### Index` to `### Archive` and the page is marked `archived::`. This is **demotion, not deletion**: the file stays in place, every incoming `[[link]]` stays valid, and the page is still found by the L3 grep fallback (and re-promoted automatically if queried again). Crucially, prune never renames or moves a file — the wiki tool links by page name, so a move would break every backlink. Run it on a schedule (the command does not self-schedule).
 
+**`--l1` is the L1 counterpart.** Access frequency cannot find stale L1 rules — every L1 file loads every session, so a stale rule never looks cold; it shows up as the agent confidently acting on an outdated assumption. So L1 files carry a claim class: `asserts-current-behavior: true` for claims about a system's current state (a path, flag, version, quirk) and `false` for decisions and preferences, which never go stale. Behavior claims carry a `verified` date. `/wiki prune --l1` classifies unclassified files (it proposes, you confirm), checks due claims against read-only local evidence, and lets you re-verify, demote the rule to L2 as history, or delete it. It does not warn mid-session when a stale rule is about to justify an action — Claude Code loads L1, so there is no hook for that; it is on the roadmap.
+
 ### Lint
 
-Lint is the automated health check. It scans every wiki page and checks 11 rules: orphan pages (no incoming links), stale content (last updated 90+ days ago but still marked high-confidence), missing required properties, broken references, hub completeness, **index drift** (an active page with no routing line, or a routing line with no page), **archived-in-live-index** (a demoted page still routed), empty pages, weak cross-referencing, credential patterns, and L1/L2 duplicates. Run with `--fix` and Claude auto-repairs what it can — including backfilling missing routing lines into hub indexes.
+Lint is the automated health check. It scans every wiki page and checks 12 rules: orphan pages (no incoming links), stale content (last updated 90+ days ago but still marked high-confidence), missing required properties, broken references, hub completeness, **index drift** (an active page with no routing line, or a routing line with no page), **archived-in-live-index** (a demoted page still routed), empty pages, weak cross-referencing, credential patterns, L1/L2 duplicates, and **due L1 claims** (behavior claims whose `verified` date is missing or older than `l1_verify_days`). Run with `--fix` and Claude auto-repairs what it can — including backfilling missing routing lines into hub indexes.
 
 ## The Schema
 
@@ -266,6 +269,7 @@ tool: logseq          # or "obsidian"
 wiki_path: ~/Documents/MyWiki/
 pages_dir: pages      # relative to wiki_path
 memory_path: ~/.claude/projects/my-project/memory/
+l1_verify_days: 90    # optional: re-verify L1 behavior claims after N days
 
 namespaces:
   - Business

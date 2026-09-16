@@ -68,6 +68,8 @@
 		- New quick rule or gotcha discovered? --> Save to Claude Memory (L1)
 		- New project, workflow, or research? --> Save to Wiki (L2)
 		- Same info in L1 AND L2? --> Warning on `/wiki lint`
+		- L1 rule claims current behavior (path, flag, version, quirk)? --> `asserts-current-behavior: true` + `verified: <date>` in its frontmatter
+		- L1 rule records a decision or preference? --> `asserts-current-behavior: false` (never stale)
 - ## Ingest Workflow
 	- Analyze new source --> extract entities, facts, relationships
 	- Identify affected wiki pages (existing + new)
@@ -87,6 +89,7 @@
 	- **Empty Pages**: Only properties, no content
 	- **Cross-Ref Minimum**: Pages with fewer than 1 outgoing [[link]]
 	- **L1/L2 Duplicates**: Same info in Memory AND Wiki
+	- **L1 Verification Due**: L1 behavior claims never verified or older than `l1_verify_days` (default 90) --> `/wiki prune --l1`
 - ## Conventions
 	- Language: English (customize per project)
 	- Dates: ISO 8601 (YYYY-MM-DD)

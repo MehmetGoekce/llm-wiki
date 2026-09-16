@@ -389,6 +389,30 @@ The `/wiki lint` command checks these rules automatically. Run with `--fix` to a
 
 **Auto-fix:** None -- requires human decision on which location is authoritative. Lint reports the overlap.
 
+### 10. Index Drift
+
+**What:** A routing line in a hub `### Index` whose page does not exist, an active page without a routing line, or a routing line without a description.
+
+**Why:** Query routes through the hub index. An unroutable page is only found by the L3 grep fallback.
+
+**Auto-fix:** Backfill missing routing lines; remove orphaned ones.
+
+### 11. Archived-in-Live-Index
+
+**What:** A page marked `archived::` whose routing line is still in `### Index` instead of `### Archive`.
+
+**Why:** An interrupted prune leaves demoted pages routable.
+
+**Auto-fix:** Move the routing line to `### Archive`. Never rename or move the page file.
+
+### 12. L1 Verification Due
+
+**What:** L1 memory files with `asserts-current-behavior: true` whose `verified` date is missing or older than `l1_verify_days` (default 90). Also reports the number of unclassified L1 files (no `asserts-current-behavior` key) as one info line. Runs only when `memory_path` is set; the L1 index file is skipped.
+
+**Why:** Every L1 file loads every session, so access frequency cannot reveal a stale rule. Behavior claims (paths, commands, flags, versions, quirks) go stale silently; decisions and preferences (`asserts-current-behavior: false`) never do and are never flagged.
+
+**Auto-fix:** None -- not even with `--fix`. L1 is not git-tracked. Lint never writes to L1 and never prints L1 file bodies. Use `/wiki prune --l1` to classify, check evidence, and re-verify, demote, or delete (see [L1 Frontmatter](#l1-frontmatter)).
+
 ## L1/L2 Boundary Rules
 
 The schema explicitly defines what belongs where:
@@ -518,6 +542,33 @@ Each hub page carries an `### Index` block: one routing line per active child pa
   the archived properties are removed.
 - **Critical:** the wiki tool links by page name, so a file rename/move would break every incoming
   `[[link]]`. Never move a demoted page — only evict it from the index.
+
+## L1 Frontmatter
+
+LRU-Demote cannot see L1: every L1 file is loaded every session. L1 files therefore carry a claim
+class instead. Both keys are optional and live either at the top level of the frontmatter or inside an
+existing `metadata:` block.
+
+| Key | Values | Meaning |
+|-----|--------|---------|
+| `asserts-current-behavior` | `true` \| `false` | `true` = claim about a system's current state (path, command, flag, version, port, quirk). `false` = decision, preference, identity, rationale — never stale |
+| `verified` | `YYYY-MM-DD` | Last evidence check. Only on `true` rules; set only by re-verify in `/wiki prune --l1` |
+
+```
+---
+name: pm2-reload-npm-start
+description: PM2 reload breaks when the app was started via npm start
+asserts-current-behavior: true
+verified: 2026-06-15
+---
+```
+
+- No `asserts-current-behavior` key = unclassified: counted by lint, never flagged as due.
+- Due = `true` AND (`verified` missing OR older than `l1_verify_days`, default 90).
+- Writes never reorder or remove other frontmatter keys. The L1 index file (e.g. `MEMORY.md`) carries neither key.
+- `/wiki prune --l1`: classify (propose, confirm) -> read-only local evidence (supports / contradicts /
+  inconclusive) -> per rule: re-verify, demote to L2 (history block with `source:: l1-demotion`, then the
+  L1 file is removed), or delete. Credential rules are never demoted.
 
 ### Access-Log page
 

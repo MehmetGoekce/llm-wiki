@@ -35,7 +35,12 @@ All downstream behavior depends on this file being valid.
 
 - REQ-620: The config MAY contain the key `memory_path` with a path to the L1
   memory directory. If absent, L1 Memory features (query supplementation,
-  L1/L2 duplicate detection) are disabled.
+  L1/L2 duplicate detection, L1 verification) are disabled.
+- REQ-660: The config MAY contain the key `l1_verify_days`: a positive integer, the
+  number of days after which an L1 rule with `asserts-current-behavior: true` is due
+  for re-verification (see specs/l1-l2-routing.md REQ-374). Default: 90.
+- REQ-661: If `l1_verify_days` is present but not a positive integer, the system SHALL
+  display a warning "Invalid l1_verify_days '{value}', using 90." and continue with 90.
 
 ### Validation Rules
 
@@ -157,6 +162,14 @@ AND NOT display an error (memory_path is optional)
 AND the answer SHALL be based on wiki pages only
 ```
 
+### Scenario 7b: L1 verification window
+
+```
+GIVEN llm-wiki.yml contains l1_verify_days: 30
+WHEN the user runs /wiki lint
+THEN Rule 12 SHALL treat an asserts-current-behavior rule verified 31 days ago as due
+```
+
 ### Scenario 8: Tilde expansion in paths
 
 ```
@@ -179,6 +192,7 @@ AND memory_path SHALL resolve to /home/user/.claude/projects/x/memory/
 - [ ] wiki_path validated (must exist on disk)
 - [ ] namespaces validated (must be non-empty)
 - [ ] memory_path is optional (features degrade gracefully)
+- [ ] l1_verify_days defaults to 90; invalid values warn and fall back to 90
 - [ ] Tilde expansion works in all path fields
 - [ ] Tool mode propagates to all downstream operations
 - [ ] Invalid config values produce clear, specific error messages

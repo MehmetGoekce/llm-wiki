@@ -71,10 +71,50 @@ session starts and context bloat; too little in L1 = repeated mistakes.
   credentials rotated).
 - REQ-352: Multiple related L1 files SHOULD be merged when they cover the same
   system or topic, to keep L1 lean.
-- REQ-353: The `/wiki lint` command SHOULD flag L1 files not referenced in 90+
-  days as candidates for L2 demotion or deletion.
+- REQ-353: (Superseded by REQ-370-379.) Access-based staleness does not apply to L1:
+  every L1 file is auto-loaded every session, so "last referenced" carries no signal.
+  L1 staleness is detected by claim class and verification date instead.
 - REQ-354: The `/wiki lint` command SHOULD flag L2 pages queried in every session
   as candidates for L1 promotion.
+
+### L1 Staleness (Claim Class + Verification Date)
+
+A stale L1 rule does not look cold — it is loaded every session. It shows up as the
+agent confidently acting on an outdated assumption. Staleness is therefore tied to
+*what kind of claim* a rule makes, not to how often it is read.
+
+- REQ-370: An L1 memory file MAY carry the frontmatter key `asserts-current-behavior`
+  with value `true` or `false`.
+- REQ-371: `asserts-current-behavior: true` marks a **falsifiable claim about the
+  current state of a system** — a path, command, flag, version, port, API surface,
+  tool quirk, or external behavior that can change without the rule changing
+  (e.g. "PM2 reload does not work with npm start").
+- REQ-372: `asserts-current-behavior: false` marks a **decision, preference, identity
+  fact, or rationale** (e.g. "no AI attribution in commits", "name is spelled with
+  a cedilla"). Such rules SHALL never be reported as stale.
+- REQ-373: An L1 memory file with `asserts-current-behavior: true` MAY carry the
+  frontmatter key `verified` with an ISO 8601 date (YYYY-MM-DD): the last date on
+  which the claim was checked against evidence (see specs/prune.md REQ-910-915).
+- REQ-374: A rule is **due for verification** when `asserts-current-behavior` is `true`
+  AND (`verified` is absent OR `verified` is older than `l1_verify_days`, default 90,
+  see specs/config.md REQ-660).
+- REQ-375: An L1 memory file WITHOUT the `asserts-current-behavior` key is
+  **unclassified**. Unclassified files SHALL NOT be reported as due; they SHALL only be
+  counted (see specs/lint.md REQ-222) and offered for classification by
+  `/wiki prune --l1`.
+- REQ-376: The system SHALL read both keys either at the top level of the frontmatter
+  or inside a `metadata:` block. When writing, it SHALL use the location the file
+  already uses for its other metadata (a `metadata:` block if present, top level
+  otherwise) and MUST NOT reorder or remove any other frontmatter keys.
+- REQ-377: The L1 index file (e.g. `MEMORY.md`) SHALL be exempt from classification
+  and verification; it is an index, not a rule.
+- REQ-378: Detecting due rules is read-only and belongs to `/wiki lint` (Rule 12).
+  Acting on them — classify, re-verify, demote to L2, delete — belongs to
+  `/wiki prune --l1` and requires per-item user confirmation.
+- REQ-379: Warning at the moment a due rule is about to justify an action
+  (planning vs. action gate) is OUT OF SCOPE for this spec. L1 loading is performed
+  by Claude Code, not by llm-wiki; the system cannot enforce a runtime gate and SHALL
+  NOT claim to.
 
 ### Routing During Ingest
 
@@ -162,7 +202,7 @@ GIVEN the L1 memory directory contains 35 files
 WHEN the user runs /wiki lint or /wiki status
 THEN the system SHALL warn: "L1 has 35 files (recommended: 10-20, audit at 30+).
     Review for candidates to demote to L2."
-AND the system SHOULD list the oldest/least-referenced L1 files as demotion candidates
+AND the system SHOULD point to `/wiki prune --l1` for classification and verification
 ```
 
 ### Scenario 7: L2 page frequently queried — promotion candidate
@@ -173,6 +213,35 @@ WHEN the user runs /wiki lint
 THEN the system SHALL flag the page as an L1 promotion candidate (info)
 AND suggest: "Wiki/Tech/Deployment is queried almost every session.
     Consider promoting key rules to L1 memory."
+```
+
+### Scenario 7b: Decision rule never goes stale
+
+```
+GIVEN L1 file feedback_no_ai_attribution.md has asserts-current-behavior: false
+AND the file was last modified 400 days ago
+WHEN the user runs /wiki lint
+THEN the system SHALL NOT report the file as due for verification
+```
+
+### Scenario 7c: Behavior claim due for verification
+
+```
+GIVEN L1 file feedback_pm2_reload.md has asserts-current-behavior: true
+AND verified: 2026-03-01
+AND l1_verify_days is 90 and today is 2026-06-15 (106 days later)
+WHEN the user runs /wiki lint
+THEN the system SHALL report the file as "L1 verification due" (warning)
+AND suggest: "Run /wiki prune --l1 to check this claim against evidence."
+```
+
+### Scenario 7d: Metadata block is respected
+
+```
+GIVEN an L1 file whose frontmatter contains `metadata:` with `type: feedback`
+WHEN /wiki prune --l1 classifies it as asserts-current-behavior: true
+THEN the key SHALL be written inside the `metadata:` block
+AND name, description, and every other existing key SHALL remain unchanged and in order
 ```
 
 ### Scenario 8: Ambiguous routing — user decision needed
@@ -199,6 +268,11 @@ AND the system SHALL wait for user confirmation before routing
 - [ ] Ambiguous cases are presented to user for decision
 - [ ] Works with both Logseq and Obsidian L2 backends
 - [ ] Boundary evolution (promote/demote) is suggested during lint
+- [ ] L1 staleness uses claim class + verification date, never access frequency
+- [ ] Rules with asserts-current-behavior: false are never reported as stale
+- [ ] Unclassified L1 files are counted, not flagged as due
+- [ ] Frontmatter writes preserve all other keys and their order
+- [ ] No runtime planning/action gate is claimed (REQ-379)
 
 ---
 
@@ -207,3 +281,5 @@ AND the system SHALL wait for user confirmation before routing
 - `llm-wiki.yml` must specify `memory_path` for L1 location
 - specs/ingest.md Phase 1 calls this routing logic
 - specs/lint.md Rules 6 (credential leak) and 9 (L1/L2 duplicates) enforce boundaries
+- specs/lint.md Rule 12 detects due L1 rules; specs/prune.md `--l1` acts on them
+- specs/config.md REQ-660 defines `l1_verify_days`

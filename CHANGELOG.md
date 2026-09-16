@@ -7,6 +7,36 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+L1 verification. Access-based eviction cannot find stale L1 rules: every L1 file loads every
+session, so a stale rule never looks cold. It shows up as the agent confidently acting on an
+outdated assumption. L1 staleness is now tied to the kind of claim a rule makes. Prompted by a
+reader asking what moves a rule back out of L1 once auto-loading keeps repeating a stale assumption.
+
+### Added
+
+- L1 frontmatter keys `asserts-current-behavior` (`true` = claim about a system's current state,
+  `false` = decision/preference, never stale) and `verified` (last evidence check).
+  Read at top level or inside a `metadata:` block; writes preserve all other keys.
+- `/wiki lint` Rule 12 **L1 Verification Due**: warns on behavior claims never verified or older than
+  `l1_verify_days`, reports the unclassified count as one info line. No auto-fix, never prints L1 bodies.
+- `/wiki prune --l1 [--batch N] [--days N]`: classify unclassified L1 files (propose, confirm), check due
+  claims against read-only local evidence (supports / contradicts / inconclusive), then per rule
+  re-verify, demote to L2 as a history block (`source:: l1-demotion`), or delete. Credential rules are
+  never demoted; full content is shown before any removal.
+- Config key `l1_verify_days` (default 90).
+- Specs: `l1-l2-routing.md` REQ-370-379, `lint.md` REQ-220-225, `prune.md` REQ-900-929,
+  `config.md` REQ-660-661, with scenarios. `docs/schema-reference.md` now also documents lint rules 10-11.
+
+### Changed
+
+- REQ-353 (flag L1 files unreferenced for 90 days) superseded by REQ-370-379.
+- `openspec/project.md` spec table brought up to date (prune added, counts: 305 requirements, 90 scenarios).
+
+### Not included
+
+- A runtime planning-vs-action gate (warn when a due rule is about to justify an action). Claude Code
+  loads L1, not llm-wiki, so there is no hook to enforce it (REQ-379). On the roadmap.
+
 ### Fixed
 
 - `docs/l1-l2-architecture.md`: removed the claim that `/wiki lint` flags L1 files unreferenced for 90 days and L2 pages queried in every session. Neither is implemented; lint only flags L1/L2 duplicates. The section now explains why access-based eviction cannot see L1 staleness and marks REQ-353 as specified but not implemented.

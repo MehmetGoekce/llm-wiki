@@ -48,11 +48,12 @@ inspired by CPU memory hierarchies.
 
 | Spec | Covers | Requirements | Scenarios |
 |------|--------|-------------|-----------|
-| specs/ingest.md | /wiki ingest — 5-phase source processing pipeline | 25 | 10 |
-| specs/query.md | /wiki query — search, synthesis, write-back | 16 | 10 |
-| specs/lint.md | /wiki lint — 9 automated health checks with auto-fix | 23 | 10 |
-| specs/schema.md | Page types, properties, validation, format rules | 30 | 10 |
-| specs/config.md | llm-wiki.yml loading, validation, error handling | 18 | 8 |
-| specs/setup.md | setup.sh interactive installer (11 steps) | 28 | 10 |
-| specs/l1-l2-routing.md | L1/L2 boundary decision logic | 22 | 8 |
-| **Total** | **Complete system coverage** | **162** | **66** |
+| specs/ingest.md | /wiki ingest — 5-phase source processing pipeline | 34 | 10 |
+| specs/query.md | /wiki query — two-stage routing, synthesis, access log | 26 | 13 |
+| specs/lint.md | /wiki lint — 12 automated health checks with auto-fix | 53 | 14 |
+| specs/prune.md | /wiki prune — L2 index eviction, `--l1` verification | 36 | 13 |
+| specs/schema.md | Page types, properties, validation, format rules | 49 | 10 |
+| specs/config.md | llm-wiki.yml loading, validation, error handling | 20 | 9 |
+| specs/setup.md | setup.sh interactive installer (11 steps) | 47 | 10 |
+| specs/l1-l2-routing.md | L1/L2 boundary decision logic, L1 staleness | 40 | 11 |
+| **Total** | **Complete system coverage** | **305** | **90** |
