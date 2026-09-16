@@ -77,8 +77,10 @@ and plain `/wiki prune` does NOT touch L1.
   verification window SHALL default to `l1_verify_days` and be overridable via
   `--days N`.
 - REQ-903: Every write in L1 mode SHALL require confirmation. L1 is not git-tracked:
-  there is no undo. Before any delete or demote, the system SHALL show the full file
-  content it is about to remove.
+  there is no undo. Before any delete or demote, the system SHALL show a carry-over
+  summary: what the L2 history block keeps, what is dropped (and why), and the path to
+  the file so the user can read it in full. For files of a few lines, the full content
+  MAY be shown instead.
 
 #### Phase L1-2: Classify
 
@@ -101,8 +103,16 @@ and plain `/wiki prune` does NOT touch L1.
   files, searching file contents, reading dependency manifests, and running commands
   only with read-only informational flags (`--version`, `--help`). The system MUST NOT
   run commands with side effects, write to disk, deploy, or change remote state.
-- REQ-912: The system SHALL report one verdict per rule — `supports`, `contradicts`, or
-  `inconclusive` — with the evidence behind it (what was checked, what was found).
+- REQ-912: The system SHALL report a verdict — `supports`, `contradicts`, or
+  `inconclusive` — per checkable claim in the rule, with the evidence behind it (what
+  was checked, what was found). A rule usually makes several claims.
+- REQ-912a: The rule's overall verdict SHALL be `contradicts` if any claim contradicts,
+  `supports` if all checked claims support, and `inconclusive` otherwise. A partial
+  verdict (some claims unchecked) SHALL be marked as partial and name the unchecked claims.
+- REQ-912b: Each piece of evidence SHALL state its basis: `executed` (read-only command
+  output), `source` (read the implementing code, not run), or `file` (existence or content
+  of a file). Behavior that can only be observed with side effects SHALL be checked via
+  `source` or reported `inconclusive`, never executed.
 - REQ-913: A rule whose elements cannot be checked locally (external service behavior,
   pricing, third-party policy) SHALL be reported `inconclusive` with the reason
   "not locally verifiable". The system MUST NOT fetch remote content to decide.
@@ -119,7 +129,9 @@ and plain `/wiki prune` does NOT touch L1.
   → re-verify only if the user confirms the claim from their own knowledge.
 - REQ-921: **Re-verify** SHALL set `verified: <today>`. If the verdict is
   `contradicts`, re-verify SHALL only be offered together with a proposed corrected
-  rule text, and both SHALL be written together on confirmation.
+  rule text, and both SHALL be written together on confirmation. The correction SHALL
+  cover every place the contradicted claim appears: the body, the frontmatter
+  `description` (it is loaded via the index), and the rule's line in the L1 index file.
 - REQ-922: **Demote to L2** SHALL route the rule's content through the normal ingest
   path (specs/ingest.md): append it as a history block to the most relevant wiki page
   found via hub-index routing, or create a page if none fits. The block SHALL carry
@@ -130,6 +142,12 @@ and plain `/wiki prune` does NOT touch L1.
 - REQ-924: **Delete** SHALL remove the L1 file and its line from the L1 index file.
 - REQ-925: Choosing none of the three (skip) SHALL leave the file untouched; it stays
   due and reappears in the next run.
+- REQ-926: Before removing an L1 file (demote or delete), the system SHALL search the
+  other L1 files and the L1 index file for references to it (file name and frontmatter
+  `name`). On demote, references SHALL be rewritten to point to the L2 page; on delete,
+  they SHALL be listed for the user and removed or rewritten on confirmation. If the
+  index line points to more than one file, only the removed file's pointer SHALL be
+  taken out, and the line SHALL be shown before and after.
 
 #### Phase L1-5: Report + Commit
 
@@ -254,7 +272,7 @@ AND NOT fetch the provider website
 GIVEN feedback_old_deploy_flow.md is due and the verdict is contradicts
 AND the user chooses demote
 WHEN the system executes the action
-THEN it SHALL show the full file content first
+THEN it SHALL show a carry-over summary (kept in L2 / dropped and why / file path) first
 AND append a history block with source:: l1-demotion to the page routed via the hub index
     (e.g. Wiki/Tech/Deployment)
 AND only then delete feedback_old_deploy_flow.md and its MEMORY.md line
@@ -268,6 +286,29 @@ GIVEN reference_strapi_credentials.md is due
 WHEN the user runs /wiki prune --l1
 THEN the evidence SHALL show only whether the referenced location exists, never the value
 AND the offered actions SHALL be re-verify and delete only
+```
+
+### Scenario 12b: Partial verdict with evidence basis
+
+```
+GIVEN feedback_e2e_gotchas.md claims (a) `data/` in .gitignore also matches lib/data/,
+    (b) a fresh worktree lacks public/clients/logo.svg, (c) a proxy rewrites `next start`
+AND .gitignore contains `data/`, public/clients/logo.svg no longer exists anywhere,
+    and (c) can only be observed by starting a server
+WHEN the user runs /wiki prune --l1
+THEN the system SHALL report (a) supports [file], (b) contradicts [file], (c) unchecked
+AND the overall verdict SHALL be contradicts (partial), naming claim (b) and unchecked (c)
+AND the proposed correction SHALL change the body, the description, and the index line
+```
+
+### Scenario 12c: References are rewritten on demote
+
+```
+GIVEN project_x_status.md is demoted to Wiki/Projects/X
+AND feedback_lighthouse.md contains "Related: [[project_x_status]]"
+WHEN the L1 file is removed
+THEN the reference SHALL be rewritten to [[Wiki/Projects/X]]
+AND the MEMORY.md pointer to project_x_status.md SHALL be removed
 ```
 
 ### Scenario 13: Modes are separate
@@ -298,8 +339,10 @@ THEN only L1 classification and verification SHALL run
 - [ ] `--l1` requires memory_path and never runs L2 eviction; plain prune never touches L1
 - [ ] Classification proposes, user confirms, verified is never set by classification
 - [ ] Evidence gathering is strictly read-only and local; no remote fetches
-- [ ] Every rule gets a verdict (supports / contradicts / inconclusive) with evidence
-- [ ] Three actions per rule, nothing written without confirmation, full content shown before removal
+- [ ] Verdicts per claim with evidence basis (executed / source / file); overall verdict aggregated, partial marked
+- [ ] Three actions per rule, nothing written without confirmation, carry-over summary shown before removal
+- [ ] Corrections cover body, description, and index line
+- [ ] References to a removed L1 file are rewritten (demote) or listed (delete)
 - [ ] Demote writes to L2 first, deletes L1 only after the wiki write succeeds
 - [ ] Credential rules: never demoted, values never printed
 

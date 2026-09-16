@@ -5,12 +5,16 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.0] - 2026-09-16
 
 L1 verification. Access-based eviction cannot find stale L1 rules: every L1 file loads every
 session, so a stale rule never looks cold. It shows up as the agent confidently acting on an
 outdated assumption. L1 staleness is now tied to the kind of claim a rule makes. Prompted by a
 reader asking what moves a rule back out of L1 once auto-loading keeps repeating a stale assumption.
+
+Piloted on a real, long-lived L1 (15 files) before release. The pilot changed the spec: verdicts
+per claim with an evidence basis, corrections that also reach `description` and the index line,
+reference rewriting before removal, and a carry-over summary instead of dumping full files.
 
 ### Added
 
@@ -21,8 +25,9 @@ reader asking what moves a rule back out of L1 once auto-loading keeps repeating
   `l1_verify_days`, reports the unclassified count as one info line. No auto-fix, never prints L1 bodies.
 - `/wiki prune --l1 [--batch N] [--days N]`: classify unclassified L1 files (propose, confirm), check due
   claims against read-only local evidence (supports / contradicts / inconclusive), then per rule
-  re-verify, demote to L2 as a history block (`source:: l1-demotion`), or delete. Credential rules are
-  never demoted; full content is shown before any removal.
+  re-verify, demote to L2 as a history block (`source:: l1-demotion`), or delete. Verdicts are per claim
+  with an evidence basis (executed / source / file). Corrections reach body, description, and index line;
+  references from other L1 files are rewritten before removal. Credential rules are never demoted.
 - Config key `l1_verify_days` (default 90).
 - Specs: `l1-l2-routing.md` REQ-370-379, `lint.md` REQ-220-225, `prune.md` REQ-900-929,
   `config.md` REQ-660-661, with scenarios. `docs/schema-reference.md` now also documents lint rules 10-11.
@@ -30,16 +35,22 @@ reader asking what moves a rule back out of L1 once auto-loading keeps repeating
 ### Changed
 
 - REQ-353 (flag L1 files unreferenced for 90 days) superseded by REQ-370-379.
-- `openspec/project.md` spec table brought up to date (prune added, counts: 305 requirements, 90 scenarios).
+- `openspec/project.md` spec table brought up to date (prune added, counts: 308 requirements, 92 scenarios).
 
 ### Not included
 
 - A runtime planning-vs-action gate (warn when a due rule is about to justify an action). Claude Code
   loads L1, not llm-wiki, so there is no hook to enforce it (REQ-379). On the roadmap.
 
+### Known limitations
+
+- Not yet confirmed that Claude Code keeps `asserts-current-behavior` and `verified` when it rewrites
+  a memory file's frontmatter (e.g. its own `modified` timestamp). If a key disappears, lint will count
+  the file as unclassified again rather than fail silently.
+
 ### Fixed
 
-- `docs/l1-l2-architecture.md`: removed the claim that `/wiki lint` flags L1 files unreferenced for 90 days and L2 pages queried in every session. Neither is implemented; lint only flags L1/L2 duplicates. The section now explains why access-based eviction cannot see L1 staleness and marks REQ-353 as specified but not implemented.
+- `docs/l1-l2-architecture.md`: removed the claim that `/wiki lint` flags L1 files unreferenced for 90 days and L2 pages queried in every session. Neither is implemented; lint only flags L1/L2 duplicates. The section now explains why access-based eviction cannot see L1 staleness; the L1 mechanism added in this release replaces that claim.
 
 ## [1.3.0] - 2026-06-08
 
@@ -168,7 +179,7 @@ First stable release.
 - Credential leak detection (lint rule 6) scans for tokens, passwords, secrets
 - L1/L2 security boundary: credentials stay in L1 (git-excluded), wiki is git-tracked
 
-[Unreleased]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.3.0...HEAD
+[1.4.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.1.0...v1.1.1

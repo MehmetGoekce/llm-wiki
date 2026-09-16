@@ -107,7 +107,8 @@ agent confidently acting on an outdated assumption. Staleness is therefore tied 
   already uses for its other metadata (a `metadata:` block if present, top level
   otherwise) and MUST NOT reorder or remove any other frontmatter keys.
 - REQ-377: The L1 index file (e.g. `MEMORY.md`) SHALL be exempt from classification
-  and verification; it is an index, not a rule.
+  and verification; it is an index, not a rule. Its lines are auto-loaded too, so they
+  SHALL be maintained together with the rules they point to (see specs/prune.md REQ-926).
 - REQ-378: Detecting due rules is read-only and belongs to `/wiki lint` (Rule 12).
   Acting on them — classify, re-verify, demote to L2, delete — belongs to
   `/wiki prune --l1` and requires per-item user confirmation.

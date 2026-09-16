@@ -204,7 +204,8 @@ never touches L1. L1 is NOT git-tracked — there is no undo, so every write nee
 
 Phase 1 - Scope:
   - Read llm-wiki.yml first. No `memory_path` -> "memory_path not configured — L1 mode unavailable." and abort
-  - Scan every L1 memory file EXCEPT the index file (e.g. MEMORY.md — an index, not a rule)
+  - Scan every L1 memory file EXCEPT the index file (e.g. MEMORY.md — an index, not a rule). Its lines are
+    auto-loaded too: keep them in step whenever a rule is corrected, demoted, or deleted
   - Batch size 10 (`--batch N`); window = `l1_verify_days` (`--days N` overrides)
   - Read `asserts-current-behavior` and `verified` from the frontmatter top level OR a `metadata:` block
 
@@ -223,7 +224,12 @@ Phase 3 - Gather Evidence (up to one batch of due rules; never-verified first, t
   - READ-ONLY and LOCAL: check existence, read files, search contents, read dependency manifests, run
     commands only with `--version` / `--help`. NEVER run commands with side effects, write, deploy, or
     touch remote state. NEVER fetch remote content
-  - Verdict per rule: `supports` / `contradicts` / `inconclusive`, with what was checked and what was found
+  - Verdict per CLAIM (a rule usually makes several): `supports` / `contradicts` / `inconclusive`, with what
+    was checked and what was found
+  - Evidence basis per claim: `executed` (read-only command), `source` (read the implementing code, not run),
+    or `file` (existence/content). Behavior observable only with side effects -> `source` or inconclusive
+  - Overall verdict: contradicts if any claim contradicts; supports if all checked claims support; else
+    inconclusive. Mark it partial when claims stayed unchecked, and name them
   - Not checkable locally (external service, pricing, third-party policy) -> `inconclusive`,
     "not locally verifiable"
   - Credential rules: report only whether the referenced location exists — NEVER print the value
@@ -233,12 +239,16 @@ Phase 4 - Act (per rule, user chooses):
   - Recommend by verdict: supports -> re-verify; contradicts -> demote (history still useful) or delete;
     inconclusive -> re-verify only if the user confirms the claim from their own knowledge
   - **Re-verify:** set `verified: <today>`. On `contradicts`, offer it ONLY together with a corrected rule
-    text; write both together
-  - **Demote to L2:** show the full file content first. Append it as a history block (`source:: l1-demotion`,
-    date) to the most relevant wiki page found via hub-index routing — or create a page via the ingest path.
-    ONLY after the wiki write succeeds: delete the L1 file and remove its line from the L1 index file.
-    Credential rules are NEVER demoted (only re-verify or delete)
-  - **Delete:** show the full file content first, then remove the L1 file and its index line
+    text; write both together. Correct every place the claim appears: body, frontmatter `description`
+    (loaded via the index), and the rule's index line
+  - **Demote to L2:** first show a carry-over summary (what the history block keeps / what is dropped and
+    why / file path to read it in full). Append a history block (`source:: l1-demotion`, date) to the most
+    relevant wiki page found via hub-index routing — or create a page via the ingest path. ONLY after the
+    wiki write succeeds: delete the L1 file. Credential rules are NEVER demoted (only re-verify or delete)
+  - **Delete:** show the carry-over summary (nothing is kept) and the file path, then remove the L1 file
+  - **Before removing any L1 file:** search the other L1 files and the index for references (file name and
+    `name`). Demote -> rewrite them to the wiki page; delete -> list them and fix on confirmation. Remove
+    only this file's pointer from the index; if the index line points to several files, show it before/after
   - Skip -> file untouched, stays due for the next run
 
 Phase 5 - Report + Commit:
@@ -467,7 +477,7 @@ Rules:
 - Every active page belongs in exactly one hub `### Index` — ingest sets the routing line, else the page
   is unroutable (only findable via L3 grep). lint --fix backfills missing lines
 - L1 is NOT git-tracked: every L1 write (classify, re-verify, demote, delete) needs per-item confirmation;
-  show the full file content before removing one. Evidence checks are read-only and local
+  show a carry-over summary and the file path before removing one. Evidence checks are read-only and local
 - ALWAYS read llm-wiki.yml first to determine tool and paths
 - ALWAYS use correct format for the configured tool (outliner vs. flat markdown)
 - Properties: tool-specific (property:: value for Logseq, YAML frontmatter for Obsidian)
