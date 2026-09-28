@@ -114,7 +114,7 @@ Restart Claude Code for the skill to be picked up.
 
 - Split large sources. A 10,000-word document should be ingested in 2-3 passes, not one.
 - The ingest pipeline has a 3-page batch limit — if your wiki has hundreds of pages and many are relevant to the source, processing takes proportionally longer.
-- If Claude Code hits a context limit mid-ingest, it will stop and report. Re-run the same ingest — Claude's append-only discipline prevents duplicates.
+- If Claude Code hits a context limit mid-ingest, it will stop and report. Re-run the same ingest — Claude reads target pages before writing and never deletes content, so a re-run does not duplicate blocks.
 
 ### `/wiki ingest` blocks with a credential-leak warning but the content has no credentials
 

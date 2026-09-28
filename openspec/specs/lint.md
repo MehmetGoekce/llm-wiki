@@ -4,7 +4,7 @@
 
 The lint command scans all wiki pages for structural issues, data quality problems,
 and security concerns. It reports findings grouped by severity and can auto-fix
-certain issues when run with the `--fix` flag. There are 12 lint rules.
+certain issues when run with the `--fix` flag. There are 13 lint rules.
 
 ---
 
@@ -147,6 +147,21 @@ certain issues when run with the `--fix` flag. There are 12 lint rules.
   confirmation).
 - REQ-225: The system MUST NOT print the body of L1 files in the lint report (L1 may
   hold credentials); file names and dates only.
+
+### Rule 13: Block Bloat
+
+- REQ-230: The system SHALL flag, as a warning, every block (Obsidian: paragraph) with
+  more than 600 characters of prose. Code blocks, tables, the Access-Log page, and
+  content inside a `History` child or a `## Change log` section SHALL NOT count.
+- REQ-231: The finding SHALL suggest splitting the block into current state (headline,
+  properties, next step) and a collapsed `History` (see specs/ingest.md REQ-032a).
+- REQ-232: The system SHALL flag, as a warning, every `updated::` value (page or section
+  property; YAML `updated`) that is more than an ISO 8601 date.
+- REQ-233: Auto-fix (--fix): for REQ-232 findings, the system SHALL cut the value to the
+  date and move the rest verbatim into the page's collapsed `## Change log` section, one
+  line per dated entry, newest first. Nothing SHALL be dropped.
+- REQ-234: The system MUST NOT auto-restructure blocks flagged under REQ-230, even with
+  `--fix` — deciding what the current state is needs human (or ingest-time) judgment.
 
 ### Reporting
 
@@ -331,15 +346,38 @@ THEN the system SHALL report the same Rule 12 findings
 AND NOT modify any L1 file
 ```
 
+### Scenario 15: Oversized block flagged, not rewritten
+
+```
+GIVEN a hub page holds one task block with 2,400 characters of prose built from dated
+    "Status <date>: ..." addenda
+WHEN the user runs /wiki lint --fix
+THEN the system SHALL flag it as "block-bloat" (warning) with the suggestion
+    "split into current state + collapsed History"
+AND NOT modify the block
+```
+
+### Scenario 16: updated:: used as a change log
+
+```
+GIVEN a page has
+    updated:: 2026-09-28 (moved three items to Expired) — before 2026-09-20 (+1 ticket)
+WHEN the user runs /wiki lint --fix
+THEN the system SHALL flag it as "block-bloat" (warning)
+AND set updated:: 2026-09-28
+AND add "2026-09-28 (moved three items to Expired)" and "2026-09-20 (+1 ticket)",
+    newest first, to the page's collapsed `## Change log`
+```
+
 ---
 
 ## Acceptance Criteria
 
-- [ ] All 12 rules execute during a lint run (Rule 12 only when memory_path is set)
+- [ ] All 13 rules execute during a lint run (Rule 12 only when memory_path is set)
 - [ ] Findings grouped by severity: critical > warning > info
 - [ ] Report includes totals (pages scanned, healthy, issues by rule)
-- [ ] Auto-fix (--fix) only modifies rules 1, 2, 4, 5, 8, 10, 11 (the 7 auto-fixable rules)
-- [ ] Rules 3, 6, 7, 9, 12 never auto-fix (require human judgment)
+- [ ] Auto-fix (--fix) only modifies rules 1, 2, 4, 5, 8, 10, 11, and the `updated::` part of 13
+- [ ] Rules 3, 6, 7, 9, 12 and oversized blocks under 13 never auto-fix (require human judgment)
 - [ ] Rule 12 reports due L1 rules and the unclassified count without printing L1 bodies
 - [ ] Index Drift (rule 10) backfills unroutable pages and removes orphaned routing lines
 - [ ] Archived-in-Live-Index (rule 11) moves routing lines but never renames/moves page files

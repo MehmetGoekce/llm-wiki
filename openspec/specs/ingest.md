@@ -43,8 +43,15 @@ A single ingest run targets 5-15 page touches (creates + updates + hub updates).
 - REQ-031: The system SHALL use the correct format for the configured tool:
   Logseq (outliner with `- ` prefix, `property:: value`) or Obsidian (flat markdown,
   YAML frontmatter).
-- REQ-032: The system MUST NOT overwrite existing content blocks when updating pages.
-  New facts SHALL be appended as new blocks below existing content.
+- REQ-032: The system MUST NOT delete existing content when updating pages. A new fact
+  that supersedes no stated state SHALL be appended as a new block below existing content.
+- REQ-032a: When a new fact supersedes a state a block already states (status, decision,
+  deadline, next step), the system SHALL rewrite that block's headline, properties and
+  next step in place and SHALL move the superseded wording, dated, into the block's
+  collapsed `History` child (newest first; Logseq `collapsed:: true`, Obsidian folded
+  callout). It MUST NOT append dated status addenda to the block's running prose.
+- REQ-032b: Superseded statements SHALL remain readable in the `History` child; moving
+  them there MUST NOT shorten or paraphrase them beyond a one-line date prefix.
 - REQ-033: The system SHALL update hub pages to list any newly created child pages
   in their namespace.
 - REQ-033a: For every page created or updated, the system SHALL set or refresh its
@@ -56,7 +63,8 @@ A single ingest run targets 5-15 page touches (creates + updates + hub updates).
 - REQ-034: The system SHALL add `[[Wiki/Namespace/Page]]` cross-references between
   all affected pages. Every page touched MUST have at least 1 outgoing wiki link.
 - REQ-035: The system SHALL set the `updated::` property (or YAML `updated` field)
-  to today's date on every modified page.
+  to today's date on every modified page. The value SHALL be the date only; change
+  notes belong in the commit message (hubs: a line in the collapsed `## Change log`).
 - REQ-036: When a page mentions an entity that has its own wiki page, the system
   SHALL use `[[Wiki/...]]` link syntax instead of plain text.
 - REQ-037: The system SHOULD target 5-15 page touches per ingest. Fewer than 5
@@ -126,7 +134,7 @@ AND the Wiki___Tech.md hub `### Index` SHALL gain a routing line:
 AND the report SHALL show: 1 page created, 1 hub updated, N cross-refs added
 ```
 
-### Scenario 2: Ingest updates existing page (append-only)
+### Scenario 2: Ingest adds a fact to an existing page (append)
 
 ```
 GIVEN a page Wiki___Tech___Strapi.md exists with content "Headless CMS for Node.js"
@@ -229,6 +237,21 @@ AND the report SHALL note: "Namespace depth limit (3) reached, content merged
     into parent page"
 ```
 
+### Scenario 11: Ingest supersedes a stated state (rewrite + history)
+
+```
+GIVEN a Logseq page holds the block
+    "- 🔴 Decommission staging VM — due [[2026-09-29]]" with status:: open
+    and child "**Next step:** delete the VM"
+WHEN the user runs /wiki ingest "2026-09-28: decided to keep the staging VM, hardening in OPS-348"
+THEN the system SHALL rewrite the headline to "✅ Staging VM stays — decided [[2026-09-28]]"
+AND set status:: done and add the follow-up ticket as a property
+AND replace the next step with the OPS-348 hardening step
+AND add "2026-09-28 decided to keep the VM" and, marked (superseded), the old
+    "due 2026-09-29, delete the VM" wording as lines of the block's collapsed History child
+AND NOT append a "Status 2026-09-28: ..." sentence to the block's prose
+```
+
 ---
 
 ## Acceptance Criteria
@@ -236,7 +259,8 @@ AND the report SHALL note: "Namespace depth limit (3) reached, content merged
 - [ ] All 5 phases execute in order (Analysis, Scan, Operations, Quality Gate, Report)
 - [ ] URL, file path, and inline text sources all work
 - [ ] New pages have ALL required properties per Schema
-- [ ] Existing pages are never overwritten — only appended to
+- [ ] No existing content is deleted — new facts are appended, superseded state moves to a collapsed `History`
+- [ ] `updated::` carries the date only
 - [ ] Hub pages list all child pages after ingest
 - [ ] Every created/updated active page has a routing line in its hub `### Index`
 - [ ] Every touched page has at least 1 cross-reference

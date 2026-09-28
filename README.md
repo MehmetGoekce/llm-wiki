@@ -161,7 +161,7 @@ graph LR
 
 **Phase 2 -- Scan Wiki.** Claude reads the schema, then scans existing pages to find which ones the new information affects. If you mention a tool that already has an entity page, it knows to update that page too.
 
-**Phase 3 -- Update Pages.** New pages get all required properties from the schema. Existing pages get new content *appended* -- existing content is never overwritten. Target: 5-15 page touches per ingest.
+**Phase 3 -- Update Pages.** New pages get all required properties from the schema. Existing pages get new facts *appended*; when a fact supersedes a stated state (a status, a deadline, a decision), the block is rewritten and the old wording moves into a collapsed `History` -- nothing is deleted, and the current state stays on top. Target: 5-15 page touches per ingest.
 
 **Phase 4 -- Quality Gate.** Before committing: Do all pages have required properties? Does every page have at least one cross-reference? Are there credential patterns in the content?
 
@@ -179,7 +179,7 @@ Prune is the eviction layer that keeps routing precise as the wiki grows. It rea
 
 ### Lint
 
-Lint is the automated health check. It scans every wiki page and checks 12 rules: orphan pages (no incoming links), stale content (last updated 90+ days ago but still marked high-confidence), missing required properties, broken references, hub completeness, **index drift** (an active page with no routing line, or a routing line with no page), **archived-in-live-index** (a demoted page still routed), empty pages, weak cross-referencing, credential patterns, L1/L2 duplicates, and **due L1 claims** (behavior claims whose `verified` date is missing or older than `l1_verify_days`). Run with `--fix` and Claude auto-repairs what it can — including backfilling missing routing lines into hub indexes.
+Lint is the automated health check. It scans every wiki page and checks 13 rules: orphan pages (no incoming links), stale content (last updated 90+ days ago but still marked high-confidence), missing required properties, broken references, hub completeness, **index drift** (an active page with no routing line, or a routing line with no page), **archived-in-live-index** (a demoted page still routed), empty pages, weak cross-referencing, credential patterns, L1/L2 duplicates, **due L1 claims** (behavior claims whose `verified` date is missing or older than `l1_verify_days`), and **block bloat** (a block grown past 600 characters of prose, or an `updated::` value used as a change log). Run with `--fix` and Claude auto-repairs what it can — including backfilling missing routing lines into hub indexes.
 
 ## The Schema
 
@@ -294,7 +294,7 @@ lint:
 # Ingest settings
 ingest:
   target_page_touches: [5, 15]   # min, max pages per ingest
-  append_only: true              # never overwrite existing content
+  append_only: true              # never delete content; superseded state moves to a collapsed History
 
 # Language (for multilingual wikis)
 language:

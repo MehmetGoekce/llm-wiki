@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-09-28
+
+Current state on top, history collapsed. The append-only rule ("never overwrite, only append") kept
+every fact, but it also turned long-lived blocks into paragraphs of dated addenda: a task picked up
+"Status <date>: ..." sentences until the valid state sat in the last line of 2,400 characters, and a
+hub's `updated::` property grew into a 5,000-character change log. Nothing was lost, but nothing was
+readable either. Piloted on a real hub page before release.
+
+### Changed
+
+- Ingest (REQ-032, new REQ-032a/b): delete nothing, but overwrite stale state. A fact that supersedes
+  nothing is still appended. A fact that supersedes a stated state rewrites the block's headline,
+  properties and next step, and the superseded wording moves, dated and verbatim, into a collapsed
+  `History` child (Logseq `collapsed:: true`, Obsidian folded callout).
+- `updated::` holds the date only (REQ-035). Change notes go to the commit message; hubs keep them in a
+  collapsed `## Change log`.
+- Query write-back follows the same rule (REQ-423).
+
+### Added
+
+- Format section **State + History** in `wiki.md` and `docs/schema-reference.md`, with Logseq and
+  Obsidian examples.
+- `/wiki lint` Rule 13 **Block Bloat** (REQ-230-234): warns on blocks with more than 600 characters of
+  prose outside history sections, and on `updated::` values that are more than a date. `--fix` moves
+  `updated::` notes verbatim into `## Change log`; oversized blocks are never auto-restructured.
+- Scenarios: ingest 11, lint 15-16. `openspec/project.md` counts: 315 requirements, 95 scenarios.
+
+### Migration
+
+- Existing pages stay valid. Run `/wiki lint` to find bloated blocks, then restructure them by hand or
+  on the next ingest that touches them. `lint --fix` handles the `updated::` part.
+
 ## [1.4.0] - 2026-09-16
 
 L1 verification. Access-based eviction cannot find stale L1 rules: every L1 file loads every
@@ -179,6 +211,7 @@ First stable release.
 - Credential leak detection (lint rule 6) scans for tokens, passwords, secrets
 - L1/L2 security boundary: credentials stay in L1 (git-excluded), wiki is git-tracked
 
+[1.5.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.1.1...v1.2.0
