@@ -102,13 +102,19 @@ Phase 2 - Wiki Scan:
 
 Phase 3 - Page Operations (target: 5-15 page touches):
   - Create new pages with all required properties (per Schema)
-  - Update existing pages: append new facts as new blocks (NEVER overwrite existing content)
+  - Update existing pages — **current state on top, history collapsed** (format: § State + History):
+    - A new fact that supersedes nothing -> append it as a new block
+    - A new fact that supersedes a stated state -> REWRITE the block's headline, properties and
+      "Next step" in place; move the superseded wording, dated, into the block's collapsed `History`
+      child (newest first). Never append "Status <date>: ..." sentences to running prose
+    - Delete nothing: every superseded statement stays readable in the history
   - Maintain the hub routing line (REQUIRED for every created/updated page): in the hub's `### Index`
     section, set/update the routing line — `[[Wiki/NS/Page]] -- <one-sentence description, <=120 chars> #tag #tag`.
     New page -> append a line; refocused page -> refresh the description. The description is the routing
     key for query Phase 0 — keep it terse, distinctive, no filler ("Notes about ...").
   - Add [[cross-references]] between all affected pages
-  - Set updated:: property (or YAML updated field) on all modified pages
+  - Set updated:: property (or YAML updated field) on all modified pages — **the date only**, no change
+    note. What changed belongs in the commit message (hubs: also one line in the collapsed `## Change log`)
 
 Phase 4 - Quality Gate:
   - All new pages have required properties (per Schema)?
@@ -280,6 +286,10 @@ Phase 2 - Check Rules (from Schema):
   - Empty Pages: pages with only properties, no content
   - Cross-ref Minimum: pages with fewer than 1 outgoing [[link]]
   - L1/L2 Duplicates: same info in Memory AND Wiki -> warning
+  - Block Bloat (warning):
+    - a block (Obsidian: a paragraph) with > 600 characters of prose outside `History` / `Change log`
+      blocks — code blocks, tables and the Access-Log page don't count -> "split into state + history"
+    - an `updated::` value (page or section) that is more than an ISO date
   - L1 Verification Due (only if `memory_path` is set; skip the L1 index file):
     - warning per L1 file with `asserts-current-behavior: true` and `verified` missing or older than
       `l1_verify_days` — report file name, verified date (or "never"), age in days
@@ -300,6 +310,9 @@ Phase 4 - Auto-Fix (only with --fix flag):
   - Clean index drift: remove orphaned routing lines (page gone); move archived pages from `### Index`
     to `### Archive`
   - Downgrade stale confidence from high to stale
+  - Move `updated::` notes out (Block Bloat): cut the value to the date, move the rest verbatim (one line
+    per date, newest first) into the page's collapsed `## Change log`. Do NOT auto-restructure oversized
+    blocks — deciding what the current state is needs judgment
   - Create stub pages for broken [[links]]
   - Add cross-references where obvious connections exist
   - NEVER write to L1 files, not even with --fix (L1 Verification Due has no auto-fix)
@@ -434,6 +447,49 @@ Rules:
   irrelevant to LRU aggregation and does not affect parsing
 - This page is exempt from orphan / stale / demote rules
 
+## State + History (format)
+
+A block that changes over time (a task, a decision, a host's status) shows the **current** state on top
+and, collapsed below it, how it got there.
+
+Logseq:
+```
+- 🔴 Decommission staging VM — due [[2026-09-29]]
+  status:: open
+  ticket:: OPS-195
+  decision:: run benchmark B1 first, then delete (2026-09-12)
+	- **Next step:** run B1, otherwise default A (check volumes, delete)
+	- Cost: trial credit until 09-30, ~$1/day after
+	- History
+	  collapsed:: true
+		- 2026-09-12 decided B1 only; host unchanged
+		- 2026-09-07 fact check: trial ends 09-30, VM is empty
+```
+
+Obsidian:
+```markdown
+### 🔴 Decommission staging VM — due 2026-09-29
+status: open · ticket: OPS-195 · decision: run benchmark B1 first, then delete (2026-09-12)
+
+**Next step:** run B1, otherwise default A (check volumes, delete)
+
+> [!note]- History
+> - 2026-09-12 decided B1 only; host unchanged
+> - 2026-09-07 fact check: trial ends 09-30, VM is empty
+```
+
+Rules:
+- Headline = one line: status marker, task, due date. No bold in the headline
+- Properties only for queryable fields (status, due, ticket, decision, blocker)
+- "Next step" = first child and the only bold text in the block
+- Context children one line each (cost, current reading, details link) — no prose over ~600 characters
+- `History` = last child, collapsed (Logseq `collapsed:: true`, Obsidian folded callout `[!note]-`),
+  one line per date, newest first
+- On update, OVERWRITE headline / properties / next step; the old wording becomes a history line.
+  Mark interim states that never happened `(superseded)`
+- Hubs: `updated::` holds the date only; change notes live as lines in a collapsed `## Change log`
+  section (one sub-block per hub section), newest first
+
 ## L1 Frontmatter (format)
 
 L1 memory files keep their existing frontmatter; llm-wiki adds two optional keys. Top level:
@@ -467,7 +523,9 @@ Rules:
 
 <constraints>
 - NEVER store credentials, passwords, or API tokens in wiki pages (wiki is git-tracked!)
-- NEVER overwrite existing content blocks — only append
+- Delete nothing, but overwrite stale state: superseded statements move verbatim into the block's
+  collapsed `History` (§ State + History) — never append "Status <date>:" addenda to running prose.
+  Blocks without a new state stay untouched
 - NEVER modify non-wiki pages (existing notes, journals, etc.)
 - LRU-Demote evicts from the index ONLY — it NEVER renames pages or moves files. The tool links by
   page name; a move would break every incoming [[link]]. Demote = routing line out + archived:: marker

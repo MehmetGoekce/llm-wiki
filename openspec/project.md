@@ -42,18 +42,18 @@ inspired by CPU memory hierarchies.
 - Config always reads from `llm-wiki.yml`
 - Max 3 wiki pages loaded simultaneously (LLM context budget)
 - Credentials MUST stay in L1 (L2 is git-tracked)
-- Append-only updates (never overwrite existing wiki content)
+- No deletion: new facts are appended, superseded state moves to a collapsed History
 
 ## Specs
 
 | Spec | Covers | Requirements | Scenarios |
 |------|--------|-------------|-----------|
-| specs/ingest.md | /wiki ingest — 5-phase source processing pipeline | 34 | 10 |
+| specs/ingest.md | /wiki ingest — 5-phase source processing pipeline | 36 | 11 |
 | specs/query.md | /wiki query — two-stage routing, synthesis, access log | 26 | 13 |
-| specs/lint.md | /wiki lint — 12 automated health checks with auto-fix | 53 | 14 |
+| specs/lint.md | /wiki lint — 13 automated health checks with auto-fix | 58 | 16 |
 | specs/prune.md | /wiki prune — L2 index eviction, `--l1` verification | 39 | 15 |
 | specs/schema.md | Page types, properties, validation, format rules | 49 | 10 |
 | specs/config.md | llm-wiki.yml loading, validation, error handling | 20 | 9 |
 | specs/setup.md | setup.sh interactive installer (11 steps) | 47 | 10 |
 | specs/l1-l2-routing.md | L1/L2 boundary decision logic, L1 staleness | 40 | 11 |
-| **Total** | **Complete system coverage** | **308** | **92** |
+| **Total** | **Complete system coverage** | **315** | **95** |

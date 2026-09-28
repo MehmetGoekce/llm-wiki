@@ -413,6 +413,14 @@ The `/wiki lint` command checks these rules automatically. Run with `--fix` to a
 
 **Auto-fix:** None -- not even with `--fix`. L1 is not git-tracked. Lint never writes to L1 and never prints L1 file bodies. Use `/wiki prune --l1` to classify, check evidence, and re-verify, demote, or delete (see [L1 Frontmatter](#l1-frontmatter)).
 
+### 13. Block Bloat
+
+**What:** A block (Obsidian: paragraph) with more than 600 characters of prose outside a `History` child or `## Change log` section (code blocks, tables, and the Access-Log page don't count). Also any `updated::` value that is more than an ISO date.
+
+**Why:** Append-only updates turn a task into a paragraph of dated addenda, and `updated::` into a change log. The current state ends up in the last sentence. See [State + History](#state--history).
+
+**Auto-fix:** Only for `updated::` -- cut to the date, move the notes verbatim into a collapsed `## Change log`. Oversized blocks are never auto-restructured: deciding what the current state is needs judgment.
+
 ## L1/L2 Boundary Rules
 
 The schema explicitly defines what belongs where:
@@ -507,7 +515,30 @@ Code blocks, tables, and all standard markdown features work as expected.
 - External links: `[Text](URL)` syntax
 - Tags: `#tag` for lightweight categorization
 - No credentials in wiki content (ever)
-- Append only -- never overwrite existing content during ingest
+- Delete nothing during ingest -- new facts are appended; a fact that supersedes a stated state rewrites the block and moves the old wording into a collapsed `History` (see below)
+- `updated::` holds the date only -- change notes go to the commit message or a collapsed `## Change log`
+
+### State + History
+
+A block that changes over time -- a task, a decision, a host's status -- shows the **current** state on top and, collapsed below it, how it got there. Without this, every update appends a "Status <date>: ..." sentence and the block grows into a paragraph where the valid state sits in the last line.
+
+```
+- 🔴 Decommission staging VM — due [[2026-09-29]]
+  status:: open
+  ticket:: OPS-195
+	- **Next step:** run B1, otherwise default A (check volumes, delete)
+	- Cost: trial credit until 09-30, ~$1/day after
+	- History
+	  collapsed:: true
+		- 2026-09-12 decided B1 only; host unchanged
+		- 2026-09-07 fact check: trial ends 09-30, VM is empty
+```
+
+- Headline: one line with status marker, task, due date
+- Properties: only queryable fields (status, due, ticket, decision, blocker)
+- "Next step": first child, the only bold text
+- `History`: last child, collapsed, one line per date, newest first. Obsidian uses a folded callout (`> [!note]- History`)
+- On update: overwrite headline, properties and next step; the old wording becomes a history line
 
 ## Hub-Index-Routing & LRU-Demote
 

@@ -72,7 +72,8 @@ knowledge gaps. It is the primary read path — the counterpart to ingest (write
 - REQ-422: The system MUST NOT write any pages without explicit user confirmation.
   Write-back is always opt-in, never automatic.
 - REQ-423: Write-back operations SHALL follow the same rules as ingest Phase 3
-  (required properties, append-only, cross-references, hub updates).
+  (required properties, no deletion — superseded state moves to a collapsed History,
+  cross-references, hub updates).
 
 ### Phase 4: Output
 
@@ -161,7 +162,7 @@ AND offers "Would you like me to create Wiki/Tech/Redis?"
 AND the user confirms "yes"
 THEN the system SHALL create Wiki/Tech/Redis with required properties
 AND update the Wiki/Tech hub page
-AND follow all ingest Phase 3 rules (append-only, cross-refs, etc.)
+AND follow all ingest Phase 3 rules (state + history, cross-refs, etc.)
 ```
 
 ### Scenario 7: Write-back offered and declined
