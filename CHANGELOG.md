@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.1] - 2026-10-05
 
 ### Fixed
 
@@ -220,6 +220,7 @@ First stable release.
 - Credential leak detection (lint rule 6) scans for tokens, passwords, secrets
 - L1/L2 security boundary: credentials stay in L1 (git-excluded), wiki is git-tracked
 
+[1.5.1]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/MehmetGoekce/llm-wiki/compare/v1.2.0...v1.3.0
