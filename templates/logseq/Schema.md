@@ -75,7 +75,7 @@
 	- Identify affected wiki pages (existing + new)
 	- Target: 5-15 page touches per ingest
 	- Create new pages with all required properties
-	- Existing pages: APPEND, never overwrite
+	- Existing pages: delete nothing. Append new facts; when a fact supersedes a stated state, rewrite that block and move the old wording, dated, into its collapsed `History` child
 	- Update hub pages
 	- Add cross-references
 	- Set `updated::` property on all changed pages

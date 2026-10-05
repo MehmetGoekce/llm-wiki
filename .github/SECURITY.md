@@ -31,4 +31,4 @@ llm-wiki is designed with security boundaries:
 - **L1 (memory) is git-excluded** — credentials stay here
 - **L2 (wiki) is git-tracked** — no secrets allowed
 - **Lint rule 6** scans for credential patterns automatically
-- **Append-only semantics** prevent accidental data loss
+- **No-deletion semantics** prevent accidental data loss: superseded statements move to a collapsed History instead of being removed

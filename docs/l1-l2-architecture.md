@@ -134,7 +134,7 @@ The key properties of L2:
 
 - **Structured**: Every page follows the schema (required properties, page types, cross-references).
 - **Searchable**: Namespaces and properties make it easy for the LLM to find relevant pages.
-- **Append-only**: New information is added to existing pages, never overwriting what is already there.
+- **Nothing is deleted**: New information is appended. When a fact supersedes a stated state, that block is rewritten and the old wording moves, dated, into its collapsed History.
 - **Versioned**: Every change is git-committed with a description of what was ingested.
 
 ## The L1/L2 Boundary in the Schema

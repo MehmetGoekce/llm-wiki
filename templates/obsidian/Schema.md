@@ -115,7 +115,7 @@ namespace: Wiki/NamespaceName
 2. Identify affected wiki pages (existing + new)
 3. Target: 5-15 page touches per ingest
 4. Create new pages with all required properties
-5. Existing pages: APPEND, never overwrite
+5. Existing pages: delete nothing. Append new facts; when a fact supersedes a stated state, rewrite that block and move the old wording, dated, into its folded `History` callout
 6. Update hub pages
 7. Add cross-references
 8. Set `updated` property on all changed pages

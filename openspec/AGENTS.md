@@ -16,7 +16,9 @@ that provides a structured knowledge management system for LLM assistants.
 
 - **Tool-agnostic:** Every feature MUST work in both Logseq and Obsidian modes
 - **Zero dependencies:** Only bash, python3, and git. No npm, no pip, no Docker
-- **Append-only wiki:** Never overwrite existing content blocks in wiki pages
+- **No deletion:** New facts are appended. A fact that supersedes a stated state rewrites
+  that block in place; the old wording moves, dated, into its collapsed History child
+  (ingest.md REQ-032, REQ-032a/b)
 - **L1/L2 separation:** Credentials in L1 only. Wiki (L2) is git-tracked
 - **JIT retrieval:** Max 3 wiki pages loaded at once
 

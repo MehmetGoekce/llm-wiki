@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Five places still described page updates as append-only ("never overwrite"), which v1.5.0
+  replaced with State + History (REQ-032, REQ-032a/b): `openspec/AGENTS.md`,
+  `docs/l1-l2-architecture.md`, both `Schema.md` templates and `.github/SECURITY.md`. New installs
+  got a Schema page that contradicted `wiki.md`. The Access-Log stays append-only.
+
 ## [1.5.0] - 2026-09-28
 
 Current state on top, history collapsed. The append-only rule ("never overwrite, only append") kept
