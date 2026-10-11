@@ -11,7 +11,7 @@ Housekeeping for a listing in Anthropic's plugin directory. No change to the ski
 
 ### Added
 
-- Plugin icon at `.claude-plugin/icon.png` (1024 x 1024 PNG).
+- Plugin icon in the `.claude-plugin` directory (1024 x 1024 PNG).
 
 ### Fixed
 
