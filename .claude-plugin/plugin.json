@@ -8,6 +8,7 @@
   "repository": "https://github.com/MehmetGoekce/llm-wiki",
   "documentationUrl": "https://github.com/MehmetGoekce/llm-wiki#readme",
   "supportUrl": "https://github.com/MehmetGoekce/llm-wiki/issues",
+  "privacyPolicyUrl": "https://github.com/MehmetGoekce/llm-wiki#privacy",
   "license": "MIT",
   "keywords": ["knowledge-base", "wiki", "logseq", "obsidian", "memory"],
   "userConfig": {
