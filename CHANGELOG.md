@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-10-11
+
+Housekeeping for a listing in Anthropic's plugin directory. No change to the skill or the scripts.
+
+### Added
+
+- Plugin icon at `.claude-plugin/icon.png` (1024 x 1024 PNG).
+
+### Fixed
+
+- Two spec scenarios showed a made-up API key as sample input (`openspec/specs/lint.md`
+  scenario 6, `openspec/specs/ingest.md` scenario 3). The directory's validation reads such a
+  string as a real secret, so the scenarios now describe the value instead of showing one.
+
 ## [1.7.0] - 2026-10-11
 
 One command. v1.6.0 shipped the plugin as two skills, `/llm-wiki:wiki` and `/llm-wiki:setup`. The

@@ -241,7 +241,7 @@ AND the report SHALL show: "Fixed: Downgraded confidence from high to stale"
 
 ```
 GIVEN a page Wiki___Tech___Deployment.md contains the text
-    "api-key:: sk-ant-abc123def456ghi789jkl012mno345pqr678"
+    "api-key:: " followed by a 40-character alphanumeric value
 WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag the page as "credential leak" (critical)
 AND suggest: "Move credential to L1 memory. Wiki pages are git-tracked."

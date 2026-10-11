@@ -149,7 +149,7 @@ AND the report SHALL show: 1 page updated
 ### Scenario 3: Credential detected in source — ingest blocked
 
 ```
-GIVEN the user provides source text containing "api-key:: sk-abc123def456ghi789"
+GIVEN the user provides source text containing "api-key:: " followed by a token value
 WHEN the system reaches Phase 4 (Quality Gate)
 THEN the ingest SHALL be blocked
 AND the system SHALL warn: "Credential pattern detected. Move to L1 memory, not wiki."
