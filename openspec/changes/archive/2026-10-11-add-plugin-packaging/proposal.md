@@ -1,8 +1,8 @@
 # Change: Package llm-wiki as a Claude Code plugin
 
 - **Change ID:** `add-plugin-packaging`
-- **Status:** Proposed
-- **Target release:** v1.6.0 (minor: new install path, no behavior change in the wiki workflows)
+- **Status:** Implemented, released in v1.6.0 (2026-10-11), archived
+- **Release:** v1.6.0 (minor: new install path, no behavior change in the wiki workflows)
 - **Affected specs:** new `specs/plugin.md`; deltas to `specs/setup.md` and `specs/config.md`
 
 ## Why

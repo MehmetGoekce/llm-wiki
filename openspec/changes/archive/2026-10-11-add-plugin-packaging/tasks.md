@@ -30,12 +30,11 @@ Ordered so that every step leaves `setup.sh` working. One commit per numbered gr
 
 ## 4. Test as an installed plugin
 
-- [ ] 4.1 `claude plugin marketplace add ./` from a clone, install, run plugin.md Scenarios 1-3
+- [x] 4.1 `claude plugin marketplace add ./` from a clone, install, run plugin.md Scenarios 1-3
       in both tool modes.
-      Done (v2.1.296): marketplace add and install from the local clone in a separate profile
-      (`claude plugin details` lists skills `setup`, `wiki`); Scenarios 1-3 run headless with
-      `--plugin-dir` in Obsidian and in Logseq mode. Open: an install from
-      `MehmetGoekce/llm-wiki` on GitHub, which is only possible after the merge (6.2).
+      Done (v2.1.296): marketplace add and install from the local clone in a separate profile;
+      Scenarios 1-3 run headless with `--plugin-dir` in Obsidian and in Logseq mode. Install from
+      GitHub: see 6.2.
 - [x] 4.2 Check whether the `directory` option accepts a path that does not exist yet.
       Result: `claude plugin configure --values-stdin` accepts it; the init script creates the
       directory. The interactive dialog was not tested.
@@ -59,6 +58,11 @@ Ordered so that every step leaves `setup.sh` working. One commit per numbered gr
 
 ## 6. Release (after merge, maintainer)
 
-- [ ] 6.1 Tag `v1.6.0` on the merge commit, GitHub release from the tag.
-- [ ] 6.2 Install from `MehmetGoekce/llm-wiki` on a clean profile and run plugin.md Scenario 1.
-- [ ] 6.3 Move this change to `openspec/changes/archive/`.
+- [x] 6.1 Tag `v1.6.0` on the merge commit `613a835`, GitHub release from the tag.
+- [x] 6.2 Install from `MehmetGoekce/llm-wiki` on a clean profile and run plugin.md Scenario 1.
+      Done (v2.1.296): marketplace add and install from GitHub into a separate profile, version
+      1.6.0 with skills `setup` and `wiki`; the fetched copy is identical to the repository.
+      Scenario 1 (Obsidian) and `status` were run headless against that fetched copy with
+      `--plugin-dir`, because the separate profile has no login. Not run: the scenario inside a
+      logged-in session with the plugin installed the regular way.
+- [x] 6.3 Move this change to `openspec/changes/archive/`.
