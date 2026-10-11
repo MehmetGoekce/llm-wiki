@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - Documentation and support links in the plugin manifest, shown on the directory listing.
+- Privacy section in the README and a privacy link in the plugin manifest.
 
 ## [1.7.1] - 2026-10-11
 

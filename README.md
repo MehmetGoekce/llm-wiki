@@ -350,6 +350,16 @@ No system is perfect. Some things to know:
 - [Schema Reference](docs/schema-reference.md) — Page types, properties, lint rules
 - [Logseq vs. Obsidian](docs/logseq-vs-obsidian.md) — Detailed comparison and migration notes
 
+## Privacy
+
+llm-wiki has no backend and collects nothing. It is a skill and a few shell scripts that run inside your own Claude Code session.
+
+- Wiki pages, the access log and `llm-wiki.yml` are written to your local Logseq graph or Obsidian vault and stay there. Whatever you ingest ends up in those files, including names or contact details if the source contains them.
+- The skill and the scripts send nothing to the author or to any third party. There is no telemetry.
+- The only network access is the page fetch that `ingest` makes when you pass a URL as the source.
+- Commits are local. Nothing is pushed unless you push your wiki yourself.
+- Claude reads the content you work with in order to do the work. That processing is covered by your own Claude plan and Anthropic's terms, not by this plugin.
+
 ## Credits
 
 - Inspired by [Andrej Karpathy's LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
