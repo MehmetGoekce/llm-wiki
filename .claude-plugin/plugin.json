@@ -6,6 +6,8 @@
   "author": { "name": "Mehmet Goekce", "url": "https://github.com/MehmetGoekce" },
   "homepage": "https://github.com/MehmetGoekce/llm-wiki",
   "repository": "https://github.com/MehmetGoekce/llm-wiki",
+  "documentationUrl": "https://github.com/MehmetGoekce/llm-wiki#readme",
+  "supportUrl": "https://github.com/MehmetGoekce/llm-wiki/issues",
   "license": "MIT",
   "keywords": ["knowledge-base", "wiki", "logseq", "obsidian", "memory"],
   "userConfig": {

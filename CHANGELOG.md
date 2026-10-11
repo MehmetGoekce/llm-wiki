@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Documentation and support links in the plugin manifest, shown on the directory listing.
+
 ## [1.7.1] - 2026-10-11
 
 Housekeeping for a listing in Anthropic's plugin directory. No change to the skill or the scripts.
