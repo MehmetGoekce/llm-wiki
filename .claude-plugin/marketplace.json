@@ -1,0 +1,12 @@
+{
+  "name": "mehmetgoekce",
+  "description": "Plugins by Mehmet Goekce",
+  "owner": { "name": "Mehmet Goekce" },
+  "plugins": [
+    {
+      "name": "llm-wiki",
+      "source": "./",
+      "description": "Persistent L1/L2 knowledge base in Logseq or Obsidian"
+    }
+  ]
+}
