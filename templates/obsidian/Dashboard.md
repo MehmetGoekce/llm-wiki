@@ -10,7 +10,7 @@ Last updated via `/wiki status` or `/wiki lint`.
 
 ## Namespaces
 
-{{NAMESPACES}}
+{{NAMESPACE_LINKS}}
 
 ## Schema
 
