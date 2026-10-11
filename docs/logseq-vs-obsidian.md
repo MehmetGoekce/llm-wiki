@@ -36,7 +36,7 @@ Logseq is the better choice when:
 
 **You value open source.** Logseq is AGPL-3.0 licensed. You can audit the code, contribute, and know that your tool will not disappear behind a paywall. For a knowledge base that might contain sensitive information, the ability to verify what the software does matters.
 
-**You prefer a daily journal workflow.** Logseq's journal pages are first-class. If you like capturing thoughts in a daily log and then extracting wiki-worthy knowledge via `/wiki ingest`, Logseq's journal integration makes this natural.
+**You prefer a daily journal workflow.** Logseq's journal pages are first-class. If you like capturing thoughts in a daily log and then extracting wiki-worthy knowledge via `/llm-wiki ingest`, Logseq's journal integration makes this natural.
 
 ## When to Choose Obsidian
 
@@ -213,7 +213,7 @@ After:  Wiki/Tech/Strapi.md
 
 **Step 4 -- Update links.** Links stay the same (`[[Wiki/Tech/Strapi]]`) -- both apps use identical syntax.
 
-**Step 5 -- Validate.** Run `/wiki lint` to catch any broken references or missing properties.
+**Step 5 -- Validate.** Run `/llm-wiki lint` to catch any broken references or missing properties.
 
 **Automation:** The `./migrate.sh logseq-to-obsidian` script handles steps 1-3 automatically. Review the output and run lint to verify.
 
@@ -234,7 +234,7 @@ After:  pages/Wiki___Tech___Strapi.md
 
 **Step 4 -- Update links.** Links stay the same.
 
-**Step 5 -- Validate.** Run `/wiki lint`.
+**Step 5 -- Validate.** Run `/llm-wiki lint`.
 
 **Automation:** The `./migrate.sh obsidian-to-logseq` script handles steps 1-3 automatically.
 
@@ -250,7 +250,7 @@ The schema itself is wiki-app-agnostic at the conceptual level. The same 5 page 
 | Cross-reference | `- [[Wiki/Tech/Strapi]]` | `[[Wiki/Tech/Strapi]]` |
 | Content block | `- Some text here` | `Some text here` |
 
-The `/wiki` skill reads `llm-wiki.yml` to determine which format to use and adjusts its output accordingly. The schema rules (required properties, lint checks, L1/L2 boundary) are enforced identically in both formats.
+The `/llm-wiki` skill reads `llm-wiki.yml` to determine which format to use and adjusts its output accordingly. The schema rules (required properties, lint checks, L1/L2 boundary) are enforced identically in both formats.
 
 ## Recommendation
 

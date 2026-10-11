@@ -3,8 +3,8 @@
 ## Description
 
 llm-wiki is distributed as a Claude Code plugin from its own repository, which also serves as the
-marketplace. The plugin provides the wiki skill, a setup skill, and the init script both setup
-paths share.
+marketplace. The plugin is a single root skill, invoked as `/llm-wiki <subcommand>`, plus the init
+script both setup paths share.
 
 ---
 
@@ -37,24 +37,25 @@ paths share.
 - REQ-852: `userConfig` options MUST NOT use the `options` field while Claude Code versions before
   v2.1.271 are supported.
 
-### Skills
+### Skill
 
-- REQ-860: The wiki skill MUST live at `skills/wiki/SKILL.md` with frontmatter keys `name: wiki`
-  and `description`.
-- REQ-861: The wiki skill MUST name the config file as `${user_config.wiki_path}/llm-wiki.yml`
+- REQ-860: The skill MUST live at `SKILL.md` in the plugin root with frontmatter keys
+  `name: llm-wiki` and `description`, so that it is invoked as `/llm-wiki <subcommand>`.
+- REQ-861: The skill MUST name the config file as `${user_config.wiki_path}/llm-wiki.yml`
   and MUST NOT rely on inferring the wiki root from context.
-- REQ-862: The setup skill MUST live at `skills/setup/SKILL.md` with frontmatter keys
-  `name: setup` and `description`.
-- REQ-863: The setup skill SHALL ask for tool, namespaces (with the default list), memory path
+- REQ-862: The plugin MUST NOT contain a `skills/` directory and the manifest MUST NOT set a
+  `skills` key. Either one makes Claude Code stop loading the root `SKILL.md` as the plugin's
+  single skill. Setup is a subcommand of the skill (`/llm-wiki setup`), not a skill of its own.
+- REQ-863: The `setup` subcommand SHALL ask for tool, namespaces (with the default list), memory path
   (optional) and git initialization, then run `scripts/init-wiki.sh` with those values and
   `--wiki-path` set to the configured `wiki_path`.
-- REQ-864: The setup skill MUST NOT create or edit wiki pages itself; page creation is the init
+- REQ-864: The `setup` subcommand MUST NOT create or edit wiki pages itself; page creation is the init
   script's job.
-- REQ-865: If `llm-wiki.yml` already exists at `wiki_path`, the setup skill SHALL report that the
+- REQ-865: If `llm-wiki.yml` already exists at `wiki_path`, the `setup` subcommand SHALL report that the
   wiki is already set up and make no changes unless the user asks to add missing pages.
-- REQ-866: If the current project contains `.claude/commands/wiki.md`, the setup skill SHOULD warn
+- REQ-866: If the current project contains `.claude/commands/wiki.md`, the `setup` subcommand SHOULD warn
   that a copied skill and the plugin are both installed and name the file to delete.
-- REQ-867: Skills MUST reference bundled files through `${CLAUDE_PLUGIN_ROOT}` in the skill body
+- REQ-867: The skill MUST reference bundled files through `${CLAUDE_PLUGIN_ROOT}` in the skill body
   and MUST NOT assume the variable exists in the Bash tool's environment.
 
 ### Init script
@@ -88,11 +89,11 @@ GIVEN Claude Code with no llm-wiki installed
 AND an empty directory ~/notes/wiki
 WHEN the user adds the marketplace from MehmetGoekce/llm-wiki
 AND installs llm-wiki and enters ~/notes/wiki as "Wiki root"
-AND runs /llm-wiki:setup, choosing Obsidian, default namespaces, no memory path, git init
+AND runs /llm-wiki setup, choosing Obsidian, default namespaces, no memory path, git init
 THEN ~/notes/wiki SHALL contain llm-wiki.yml with tool: obsidian
 AND Wiki/Schema.md, Wiki/Dashboard.md, Wiki/Reference/Access-Log.md and 7 hub pages
 AND a git repository with one commit
-AND /llm-wiki:wiki status SHALL report the wiki without asking where it is
+AND /llm-wiki status SHALL report the wiki without asking where it is
 ```
 
 ### Scenario 2: Plugin on an existing wiki
@@ -100,7 +101,7 @@ AND /llm-wiki:wiki status SHALL report the wiki without asking where it is
 ```
 GIVEN a wiki created by setup.sh v1.5.1 at ~/Documents/Logseq
 WHEN the user installs the plugin and enters ~/Documents/Logseq as "Wiki root"
-AND runs /llm-wiki:setup
+AND runs /llm-wiki setup
 THEN the skill SHALL report that the wiki is already set up
 AND no file in the wiki SHALL change
 ```
@@ -110,7 +111,7 @@ AND no file in the wiki SHALL change
 ```
 GIVEN the plugin is installed with wiki_path ~/notes/wiki
 AND Claude Code runs in ~/code/some-project, which has no .claude/commands/wiki.md
-WHEN the user runs /llm-wiki:wiki query "deployment checklist"
+WHEN the user runs /llm-wiki query "deployment checklist"
 THEN the skill SHALL read ~/notes/wiki/llm-wiki.yml as its first operation
 AND answer from the wiki
 ```
@@ -150,9 +151,10 @@ THEN the REQ-832 check SHALL fail and the release SHALL NOT be tagged
 
 - [ ] `claude plugin validate . --strict` passes on the repository root
 - [ ] Manifest version equals the topmost CHANGELOG release
-- [ ] Plugin installs from the repository as `llm-wiki@mehmetgoekce` with skills `wiki` and `setup`
-- [ ] The wiki skill reads the config from the configured wiki root without asking
-- [ ] The setup skill creates pages only through the init script
+- [ ] Plugin installs from the repository as `llm-wiki@mehmetgoekce` with the single skill `llm-wiki`
+- [ ] `/llm-wiki <subcommand>` reaches the skill with its arguments; no `skills/` directory exists
+- [ ] The skill reads the config from the configured wiki root without asking
+- [ ] `/llm-wiki setup` creates pages only through the init script
 - [ ] Init script: no prompts, validates before writing, idempotent
 - [ ] Nothing is written to the plugin directory
 

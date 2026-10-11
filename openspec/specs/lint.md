@@ -1,4 +1,4 @@
-# Spec: /wiki lint — Automated Health Checks
+# Spec: /llm-wiki lint — Automated Health Checks
 
 ## Description
 
@@ -62,7 +62,7 @@ certain issues when run with the `--fix` flag. There are 13 lint rules.
 - REQ-142: Auto-fix (--fix): The system SHALL create a stub page for each broken
   reference with: type:: knowledge, domain:: tech, confidence:: low,
   created:: [today], updated:: [today], and a placeholder note
-  "To be filled via /wiki ingest".
+  "To be filled via /llm-wiki ingest".
 - REQ-143: Stub pages SHALL include a cross-reference back to the page that
   contained the broken link.
 
@@ -92,7 +92,7 @@ certain issues when run with the `--fix` flag. There are 13 lint rules.
   substantive content below the properties section.
 - REQ-171: A page with only type/date properties and no knowledge blocks SHALL
   be flagged as a warning.
-- REQ-172: No auto-fix (page should be filled via /wiki ingest or deleted).
+- REQ-172: No auto-fix (page should be filled via /llm-wiki ingest or deleted).
 
 ### Rule 8: Cross-Reference Minimum
 
@@ -142,7 +142,7 @@ certain issues when run with the `--fix` flag. There are 13 lint rules.
   `asserts-current-behavior` key) as a single info finding, not one finding per file.
 - REQ-223: Rules with `asserts-current-behavior: false` SHALL never be flagged by
   this rule, regardless of age.
-- REQ-224: No auto-fix. The finding SHALL suggest `/wiki prune --l1`. Rule 12 MUST NOT
+- REQ-224: No auto-fix. The finding SHALL suggest `/llm-wiki prune --l1`. Rule 12 MUST NOT
   write to L1 files, even with `--fix` (L1 is not git-tracked; writes need per-item
   confirmation).
 - REQ-225: The system MUST NOT print the body of L1 files in the lint report (L1 may
@@ -191,7 +191,7 @@ GIVEN a wiki with 10 pages, all with required properties, cross-references,
     and current updated:: dates
 AND all hub pages list their children
 AND no credential patterns exist in any page
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the report SHALL show: 10 pages scanned, 0 issues found
 AND no pages SHALL be modified
 ```
@@ -202,7 +202,7 @@ AND no pages SHALL be modified
 GIVEN a page Wiki___Tech___Redis.md exists
 AND no other wiki page contains a [[Wiki/Tech/Redis]] link
 AND Redis is NOT a hub page
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag Wiki/Tech/Redis as "orphan" (warning)
 AND suggest: "Add [[Wiki/Tech/Redis]] to the Wiki/Tech hub page"
 ```
@@ -211,7 +211,7 @@ AND suggest: "Add [[Wiki/Tech/Redis]] to the Wiki/Tech hub page"
 
 ```
 GIVEN the same orphan condition as Scenario 2
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL append [[Wiki/Tech/Redis]] to Wiki___Tech.md
 AND the report SHALL show: "Fixed: Added Wiki/Tech/Redis to hub Wiki/Tech"
 ```
@@ -222,7 +222,7 @@ AND the report SHALL show: "Fixed: Added Wiki/Tech/Redis to hub Wiki/Tech"
 GIVEN a page Wiki___Tech___Strapi.md with updated:: 2026-01-01
 AND the page has confidence:: high
 AND today is 2026-04-10 (100 days later, exceeds 90-day threshold)
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag the page as "stale" (warning)
 AND suggest: "Confidence is 'high' but page is 100 days old. Review or downgrade."
 ```
@@ -231,7 +231,7 @@ AND suggest: "Confidence is 'high' but page is 100 days old. Review or downgrade
 
 ```
 GIVEN the same stale condition as Scenario 4
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL change confidence:: from high to stale
 AND the updated:: property SHALL remain 2026-01-01 (NOT changed)
 AND the report SHALL show: "Fixed: Downgraded confidence from high to stale"
@@ -242,7 +242,7 @@ AND the report SHALL show: "Fixed: Downgraded confidence from high to stale"
 ```
 GIVEN a page Wiki___Tech___Deployment.md contains the text
     "api-key:: sk-ant-abc123def456ghi789jkl012mno345pqr678"
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag the page as "credential leak" (critical)
 AND suggest: "Move credential to L1 memory. Wiki pages are git-tracked."
 AND the finding SHALL be listed first in the report (critical severity)
@@ -253,10 +253,10 @@ AND the finding SHALL be listed first in the report (critical severity)
 ```
 GIVEN a page Wiki___Projects___MyProject.md contains [[Wiki/Tech/NewTool]]
 AND no file Wiki___Tech___NewTool.md exists
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL create a stub page Wiki___Tech___NewTool.md with:
     type:: knowledge, domain:: tech, confidence:: low, created:: [today],
-    updated:: [today], and content "To be filled via /wiki ingest"
+    updated:: [today], and content "To be filled via /llm-wiki ingest"
 AND the stub SHALL contain [[Wiki/Projects/MyProject]] as a cross-reference
 AND the Wiki___Tech.md hub SHALL be updated to list the new page
 ```
@@ -266,7 +266,7 @@ AND the Wiki___Tech.md hub SHALL be updated to list the new page
 ```
 GIVEN Wiki___Tech.md (hub) lists: [[Wiki/Tech/Strapi]], [[Wiki/Tech/Stack]]
 AND Wiki___Tech___Deployment.md also exists in the pages directory
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag Wiki/Tech hub as "incomplete" (warning)
 AND suggest: "Hub Wiki/Tech is missing child: [[Wiki/Tech/Deployment]]"
 ```
@@ -281,9 +281,9 @@ GIVEN a page Wiki___Learning___Rust.md contains only:
     updated:: 2026-03-15
     confidence:: low
 AND no content blocks exist below the properties
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag the page as "empty" (warning)
-AND suggest: "Page has properties but no content. Fill via /wiki ingest or delete."
+AND suggest: "Page has properties but no content. Fill via /llm-wiki ingest or delete."
 ```
 
 ### Scenario 10: L1/L2 duplicate detected
@@ -291,7 +291,7 @@ AND suggest: "Page has properties but no content. Fill via /wiki ingest or delet
 ```
 GIVEN L1 memory file feedback_deploy_ram.md contains "Stop ClamAV before deploy"
 AND wiki page Wiki___Tech___Deployment.md also contains "Stop ClamAV before deploy"
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag as "L1/L2 duplicate" (info)
 AND suggest: "Same info in L1 memory and L2 wiki. Decide which is authoritative."
 ```
@@ -301,7 +301,7 @@ AND suggest: "Same info in L1 memory and L2 wiki. Decide which is authoritative.
 ```
 GIVEN a page Wiki___Tech___Redis.md exists and is active (not archived)
 AND the Wiki/Tech hub `### Index` has no routing line for [[Wiki/Tech/Redis]]
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL flag Wiki/Tech/Redis as "index drift: unroutable" (warning)
 AND backfill a routing line into the Wiki/Tech hub `### Index`:
     "[[Wiki/Tech/Redis]] -- <description from title + first block> #<existing tags>"
@@ -312,7 +312,7 @@ AND backfill a routing line into the Wiki/Tech hub `### Index`:
 ```
 GIVEN Wiki___Tech___Legacy-Foo.md has archived:: 2026-06-07 (and status:: archived, an entity page)
 AND its routing line still sits in the Wiki/Tech hub `### Index`
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL flag it as "archived-in-live-index" (warning)
 AND move the routing line from `### Index` to `### Archive`
 AND NOT rename or move the Legacy-Foo page file
@@ -328,11 +328,11 @@ GIVEN memory_path contains:
     user_address.md          (no asserts-current-behavior key)
     MEMORY.md                (index)
 AND today is 2026-06-15 and l1_verify_days is 90
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag feedback_pm2_reload.md (verified 2026-01-10, 156 days) (warning)
 AND flag feedback_rtk_hook.md (verified never) (warning)
 AND NOT flag feedback_no_ai.md
-AND report "1 unclassified L1 file — run /wiki prune --l1 to classify" (info)
+AND report "1 unclassified L1 file — run /llm-wiki prune --l1 to classify" (info)
 AND NOT inspect MEMORY.md
 AND NOT print any L1 file body
 ```
@@ -341,7 +341,7 @@ AND NOT print any L1 file body
 
 ```
 GIVEN the same L1 state as Scenario 13
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL report the same Rule 12 findings
 AND NOT modify any L1 file
 ```
@@ -351,7 +351,7 @@ AND NOT modify any L1 file
 ```
 GIVEN a hub page holds one task block with 2,400 characters of prose built from dated
     "Status <date>: ..." addenda
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL flag it as "block-bloat" (warning) with the suggestion
     "split into current state + collapsed History"
 AND NOT modify the block
@@ -362,7 +362,7 @@ AND NOT modify the block
 ```
 GIVEN a page has
     updated:: 2026-09-28 (moved three items to Expired) — before 2026-09-20 (+1 ticket)
-WHEN the user runs /wiki lint --fix
+WHEN the user runs /llm-wiki lint --fix
 THEN the system SHALL flag it as "block-bloat" (warning)
 AND set updated:: 2026-09-28
 AND add "2026-09-28 (moved three items to Expired)" and "2026-09-20 (+1 ticket)",

@@ -6,7 +6,7 @@ The setup script is the entry point for users who install without the plugin. It
 asks for tool, wiki path, namespaces, memory path and git, then calls
 `scripts/init-wiki.sh` (specs/plugin.md REQ-870-877) to create the initial pages
 (Schema, Dashboard, Hub pages, Access-Log) and the config file, and optionally copies
-the /wiki skill into one Claude Code project. It requires only bash, python3, and git.
+the skill into one Claude Code project, where it is invoked as `/wiki`. It requires only bash, python3, and git.
 
 The requirements for page creation, config generation, git init and the initial commit
 (Steps 3 and 6-9, 11) bind the init script; `setup.sh` collects the answers and passes
@@ -122,19 +122,23 @@ them on.
 
 ### Step 10: Skill Installation
 
-- REQ-800: The system SHALL ask if the user wants to install the /wiki skill
+- REQ-800: The system SHALL ask if the user wants to copy the skill
   for Claude Code.
 - REQ-801: The user MAY enter a project path or "skip" to decline.
-- REQ-802: If installing: copy `skills/wiki/SKILL.md` to
-  `$project/.claude/commands/wiki.md`, creating the directory if needed.
+- REQ-802: If installing: copy `SKILL.md` to `$project/.claude/commands/wiki.md`,
+  creating the directory if needed. The copy keeps the file name `wiki.md` (command
+  `/wiki`) so that it never collides with the plugin's `/llm-wiki`.
 - REQ-803: The system SHALL replace every occurrence of the literal string
-  `${user_config.wiki_path}` in the copied file with the absolute wiki path.
+  `${user_config.wiki_path}` in the copied file with the absolute wiki path, and
+  every occurrence of `${CLAUDE_PLUGIN_ROOT}` with the absolute path of the
+  repository clone, so that `/wiki setup` finds the init script.
 - REQ-804: The replacement MUST behave identically on macOS and Linux and MUST
   be safe for paths containing characters that are special to `sed`.
 - REQ-805: Before the skill-copy prompt the system SHALL print that the plugin
   is the recommended install path and that the copy does not update itself.
 - REQ-806: After copying, the system SHALL verify that the copied file no
-  longer contains `${user_config.` and SHALL print a warning if it does.
+  longer contains `${user_config.` or `${CLAUDE_PLUGIN_ROOT}` and SHALL print a
+  warning if it does.
 
 ### Step 11: Initial Git Commit
 
@@ -174,7 +178,7 @@ THEN the system SHALL:
     - Create 10 pages: Schema, Dashboard, Access-Log, 7 hub pages (one per default namespace)
     - Create llm-wiki.yml with all settings
     - Initialize git with .gitignore
-    - Copy skills/wiki/SKILL.md to ~/myproject/.claude/commands/wiki.md
+    - Copy SKILL.md to ~/myproject/.claude/commands/wiki.md
     - The copy SHALL contain the absolute path of ~/Documents/TestWiki as wiki root
       and no "${user_config." string
     - Create initial git commit

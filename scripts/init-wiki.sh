@@ -174,7 +174,7 @@ hub_tpl = read_template("Hub.md")
 for ns in namespaces:
     write_file(hub(ns), hub_tpl.replace("{{NAMESPACE}}", ns).replace("{{DATE}}", today))
 
-# Access-Log: append-only LRU signal for /wiki prune
+# Access-Log: append-only LRU signal for /llm-wiki prune
 write_file(page("Reference/Access-Log"), read_template("Access-Log.md").replace("{{DATE}}", today))
 
 config = [

@@ -93,7 +93,7 @@ namespace: Wiki/NamespaceName
 - Credentials (MUST NEVER go into the wiki)
 - Everything Claude needs to know at the START of every session
 
-### L2 = Wiki (on-demand via `/wiki query`)
+### L2 = Wiki (on-demand via `/llm-wiki query`)
 
 - Projects and their details
 - Workflows and processes
@@ -105,7 +105,7 @@ namespace: Wiki/NamespaceName
 
 - New quick rule or gotcha discovered? --> Save to Claude Memory (L1)
 - New project, workflow, or research? --> Save to Wiki (L2)
-- Same info in L1 AND L2? --> Warning on `/wiki lint`
+- Same info in L1 AND L2? --> Warning on `/llm-wiki lint`
 - L1 rule claims current behavior (path, flag, version, quirk)? --> `asserts-current-behavior: true` + `verified: <date>` in its frontmatter
 - L1 rule records a decision or preference? --> `asserts-current-behavior: false` (never stale)
 
@@ -131,7 +131,7 @@ namespace: Wiki/NamespaceName
 - **Empty Pages**: Only properties, no content
 - **Cross-Ref Minimum**: Pages with fewer than 1 outgoing [[link]]
 - **L1/L2 Duplicates**: Same info in Memory AND Wiki
-- **L1 Verification Due**: L1 behavior claims never verified or older than `l1_verify_days` (default 90) --> `/wiki prune --l1`
+- **L1 Verification Due**: L1 behavior claims never verified or older than `l1_verify_days` (default 90) --> `/llm-wiki prune --l1`
 
 ## Conventions
 

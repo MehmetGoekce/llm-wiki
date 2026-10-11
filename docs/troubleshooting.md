@@ -90,19 +90,19 @@ If you mix conventions (e.g., triple-underscore files inside an Obsidian vault),
 
 ## Claude Code Integration
 
-### `/wiki` commands aren't available in Claude Code
+### `/llm-wiki` commands aren't available in Claude Code
 
 **Cause:** Neither the plugin nor a copied skill is installed.
 
 **Fix (plugin):**
 
 1. Run `claude plugin list` and check that `llm-wiki@mehmetgoekce` is listed as enabled. If not, install it as described in the README.
-2. The plugin's commands carry a prefix: `/llm-wiki:wiki ingest ...`, not `/wiki ingest ...`.
+2. The plugin's command is `/llm-wiki <subcommand>`, for example `/llm-wiki ingest ...`. In v1.6.0 it was `/llm-wiki:wiki ingest ...`; a copied skill is `/wiki ingest ...`.
 
 **Fix (copied skill):**
 
 1. Confirm `.claude/commands/wiki.md` exists in your project directory.
-2. If missing, re-run `./setup.sh` and enter the project path at the "Install /wiki skill" step.
+2. If missing, re-run `./setup.sh` and enter the project path at the "Copy the skill into a Claude Code project?" step. The copy is invoked as `/wiki`.
 
 Restart Claude Code for the skill to be picked up.
 
@@ -119,9 +119,9 @@ Restart Claude Code for the skill to be picked up.
 
 **Cause:** The wiki root is set, but no wiki has been created there yet, or the wiki was moved.
 
-**Fix:** Run `/llm-wiki:setup` (plugin) or `./setup.sh` to create it. If you moved the wiki, point the plugin's "Wiki root" option at the new location.
+**Fix:** Run `/llm-wiki setup` (or `./setup.sh` in a clone of the repository) to create it. If you moved the wiki, point the plugin's "Wiki root" option at the new location.
 
-### `/wiki ingest` runs forever or times out
+### `/llm-wiki ingest` runs forever or times out
 
 **Cause:** Source is too large, or the wiki has grown past the batch limit and Claude is trying to load too many pages at once.
 
@@ -131,7 +131,7 @@ Restart Claude Code for the skill to be picked up.
 - The ingest pipeline has a 3-page batch limit — if your wiki has hundreds of pages and many are relevant to the source, processing takes proportionally longer.
 - If Claude Code hits a context limit mid-ingest, it will stop and report. Re-run the same ingest — Claude reads target pages before writing and never deletes content, so a re-run does not duplicate blocks.
 
-### `/wiki ingest` blocks with a credential-leak warning but the content has no credentials
+### `/llm-wiki ingest` blocks with a credential-leak warning but the content has no credentials
 
 **Cause:** False positive from lint rule #6. The credential-leak regex includes base64-like patterns (`[A-Za-z0-9+/]{40,}`), which also match innocent long strings — long URLs, hashes, or technical identifiers.
 
@@ -152,15 +152,15 @@ Never commit around the lint by force. The false positive rate is low, and genui
 
 **Fix:**
 
-- **Two-stage routing handles retrieval precision automatically.** Since v1.2.0, `/wiki query` reads the hub `### Index` routing lines first and opens only the 3 best-matching pages, rather than grepping every page. Keep each routing line's description terse and distinctive — that is what keeps routing sharp as the wiki grows.
-- **Run `/wiki prune` periodically (default every 6 months).** It evicts cold pages — no read in N months — from the live hub index into `### Archive`, so routing stays focused on the pages you actually use. Eviction never deletes or moves files; demoted pages stay greppable and are re-promoted automatically if queried again.
+- **Two-stage routing handles retrieval precision automatically.** Since v1.2.0, `/llm-wiki query` reads the hub `### Index` routing lines first and opens only the 3 best-matching pages, rather than grepping every page. Keep each routing line's description terse and distinctive — that is what keeps routing sharp as the wiki grows.
+- **Run `/llm-wiki prune` periodically (default every 6 months).** It evicts cold pages — no read in N months — from the live hub index into `### Archive`, so routing stays focused on the pages you actually use. Eviction never deletes or moves files; demoted pages stay greppable and are re-promoted automatically if queried again.
 - **Split namespaces.** If `Wiki/Tech/` has 50+ pages, consider splitting into `Wiki/Tech/Infrastructure/`, `Wiki/Tech/Languages/`, etc. Namespaces can go 3 levels deep.
-- **Run `/wiki lint --fix`.** Beyond stale detection (90+ days), it now also fixes index drift — backfilling missing routing lines and tidying archived pages left in the live index.
+- **Run `/llm-wiki lint --fix`.** Beyond stale detection (90+ days), it now also fixes index drift — backfilling missing routing lines and tidying archived pages left in the live index.
 - **Audit L1/L2.** If you find yourself querying the same L2 page every session, promote the essential part to L1.
 
-The wiki scales, but like any knowledge system, it requires periodic gardening — now mostly automated by `/wiki prune` and `/wiki lint --fix`.
+The wiki scales, but like any knowledge system, it requires periodic gardening — now mostly automated by `/llm-wiki prune` and `/llm-wiki lint --fix`.
 
-### `/wiki lint` keeps flagging the same orphan pages
+### `/llm-wiki lint` keeps flagging the same orphan pages
 
 **Cause:** Pages that have no incoming links are flagged as orphans. If the same pages appear every run, they are genuinely unlinked.
 
@@ -168,6 +168,6 @@ The wiki scales, but like any knowledge system, it requires periodic gardening �
 
 - Add the page to the appropriate hub page (e.g., `Wiki/Tech` hub should list all `Wiki/Tech/*` pages).
 - Add cross-references from related pages — if `Wiki/Projects/X` mentions `Wiki/Tech/Y`, make sure it uses `[[Wiki/Tech/Y]]` syntax.
-- Run `/wiki lint --fix` — it auto-adds missing hub entries where obvious.
+- Run `/llm-wiki lint --fix` — it auto-adds missing hub entries where obvious.
 
 If a page is genuinely isolated and cannot be linked from anywhere, it may be a sign the page is misplaced (wrong namespace) or should be deleted.

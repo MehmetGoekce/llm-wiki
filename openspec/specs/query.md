@@ -1,4 +1,4 @@
-# Spec: /wiki query — Knowledge Retrieval & Synthesis
+# Spec: /llm-wiki query — Knowledge Retrieval & Synthesis
 
 ## Description
 
@@ -98,7 +98,7 @@ knowledge gaps. It is the primary read path — the counterpart to ingest (write
 ```
 GIVEN the wiki contains Wiki/Tech/Strapi with content about Strapi CMS
 AND the page has confidence:: high and updated:: 2026-04-01
-WHEN the user runs /wiki query "what port does Strapi use?"
+WHEN the user runs /llm-wiki query "what port does Strapi use?"
 THEN the system SHALL read Wiki/Tech/Strapi
 AND synthesize an answer from that page's content
 AND output: "Sources: [[Wiki/Tech/Strapi]]"
@@ -112,7 +112,7 @@ GIVEN the wiki contains:
     - Wiki/Tech/Deployment (deploy process, VPS details)
     - Wiki/Tech/Strapi (CMS configuration, port settings)
     - Wiki/Reference/Workflows (deploy workflow steps)
-WHEN the user runs /wiki query "how do I deploy a new blog post?"
+WHEN the user runs /llm-wiki query "how do I deploy a new blog post?"
 THEN the system SHALL read all 3 pages (batching if needed)
 AND combine deployment steps from Workflows with Strapi API details
 AND present a coherent answer (not just 3 raw page dumps)
@@ -124,7 +124,7 @@ AND output: "Sources: [[Wiki/Tech/Deployment]], [[Wiki/Tech/Strapi]],
 
 ```
 GIVEN the wiki has no pages mentioning "Kubernetes"
-WHEN the user runs /wiki query "how is Kubernetes configured?"
+WHEN the user runs /llm-wiki query "how is Kubernetes configured?"
 THEN the system SHALL state: "No information found in the wiki for Kubernetes."
 AND offer: "Would you like me to create a Wiki/Tech/Kubernetes page?"
 AND NOT fabricate an answer about Kubernetes
@@ -135,7 +135,7 @@ AND NOT fabricate an answer about Kubernetes
 ```
 GIVEN Wiki/Tech/Docker has updated:: 2025-12-01 and confidence:: high
 AND today is 2026-04-10 (131 days old, exceeds 90-day threshold)
-WHEN the user runs /wiki query "what Docker version are we using?"
+WHEN the user runs /llm-wiki query "what Docker version are we using?"
 THEN the system SHALL use the page to answer the question
 AND flag: "Note: [[Wiki/Tech/Docker]] was last updated 2025-12-01
     (131 days ago) and may be outdated."
@@ -145,7 +145,7 @@ AND flag: "Note: [[Wiki/Tech/Docker]] was last updated 2025-12-01
 
 ```
 GIVEN Wiki/Learning/Rust has confidence:: low
-WHEN the user runs /wiki query "what Rust resources do we have?"
+WHEN the user runs /llm-wiki query "what Rust resources do we have?"
 THEN the system SHALL use the page to answer
 AND flag: "Note: [[Wiki/Learning/Rust]] has confidence:: low —
     verify before acting on this."
@@ -154,7 +154,7 @@ AND flag: "Note: [[Wiki/Learning/Rust]] has confidence:: low —
 ### Scenario 6: Write-back offered and accepted
 
 ```
-GIVEN the user asks /wiki query "what is our Redis setup?"
+GIVEN the user asks /llm-wiki query "what is our Redis setup?"
 AND the wiki has no Redis page
 AND the user previously ingested Redis information in L1 memory
 WHEN the system reports "No wiki page for Redis"
@@ -180,7 +180,7 @@ AND SHALL NOT modify any existing pages
 ```
 GIVEN Wiki/Tech/Deployment contains general deploy documentation
 AND L1 Memory file feedback_deploy_ram.md contains "Stop ClamAV before deploy"
-WHEN the user runs /wiki query "anything I should know before deploying?"
+WHEN the user runs /llm-wiki query "anything I should know before deploying?"
 THEN the system SHALL read the wiki page AND the L1 memory file
 AND include both in the synthesized answer
 AND attribute: "Sources: [[Wiki/Tech/Deployment]] + L1 Memory (deploy gotcha)"
@@ -191,7 +191,7 @@ AND attribute: "Sources: [[Wiki/Tech/Deployment]] + L1 Memory (deploy gotcha)"
 ```
 GIVEN Wiki/Tech/Strapi says "Strapi runs on port 1337"
 AND Wiki/Reference/Workflows says "Strapi API is at localhost:1338"
-WHEN the user runs /wiki query "what port is Strapi on?"
+WHEN the user runs /llm-wiki query "what port is Strapi on?"
 THEN the system SHALL present both values
 AND note the contradiction: "Wiki sources disagree: Wiki/Tech/Strapi says 1337,
     Wiki/Reference/Workflows says 1338. Verify which is current."
@@ -216,7 +216,7 @@ GIVEN the Wiki/Tech hub `### Index` contains:
     - [[Wiki/Tech/Strapi]] -- Headless CMS, ports, deploy gotchas #strapi #deploy
     - [[Wiki/Tech/PM2]] -- Process manager, cwd/reload bug #pm2 #deploy
     - [[Wiki/Tech/Nginx]] -- Reverse proxy, TLS, upstream ports #nginx
-WHEN the user runs /wiki query "what port does Strapi run on?"
+WHEN the user runs /llm-wiki query "what port does Strapi run on?"
 THEN the system SHALL read ONLY the Wiki/Tech hub page in Phase 0
 AND select [[Wiki/Tech/Strapi]] from its routing line description
 AND read ONLY Wiki/Tech/Strapi in Phase 1 (NOT PM2, NOT Nginx, NOT a full-namespace grep)
@@ -227,7 +227,7 @@ AND append "<today> -- [[Wiki/Tech/Strapi]] -- query -- matched: \"Strapi 5 -- p
 
 ```
 GIVEN no hub `### Index` routing line mentions "rate limiting"
-WHEN the user runs /wiki query "how do we handle rate limiting?"
+WHEN the user runs /llm-wiki query "how do we handle rate limiting?"
 THEN Phase 0 SHALL return no confident match
 AND the system SHALL fall back to a full-text grep across all wiki pages (L3)
 AND read the top 3-5 grep matches in Phase 1

@@ -5,7 +5,7 @@ Thanks for your interest in contributing! This project is young and contribution
 ## Ways to contribute
 
 - **Bug reports** — Something broken in the plugin or `setup.sh`? Wiki pages not formatting correctly? Open an issue.
-- **Feature requests** — Ideas for new `/wiki` commands, lint rules, or template improvements? Open an issue.
+- **Feature requests** — Ideas for new `/llm-wiki` commands, lint rules, or template improvements? Open an issue.
 - **Templates** — Better Schema designs, new page types, or improved hub pages.
 - **Tool support** — Improvements to Logseq or Obsidian templates, or support for new tools.
 - **Documentation** — Fixes, clarifications, or new guides.
@@ -53,10 +53,10 @@ To test the plugin itself without installing it:
 
 ```bash
 claude plugin validate . --strict
-claude --plugin-dir .          # then /llm-wiki:setup, /llm-wiki:wiki status
+claude --plugin-dir .          # then /llm-wiki setup, /llm-wiki status
 ```
 
-The skill is `skills/wiki/SKILL.md`. It refers to the wiki location as `${user_config.wiki_path}`; keep that placeholder to the one `Wiki root:` line, because `setup.sh` replaces every occurrence in a copied skill.
+The skill is `SKILL.md` in the repository root; the plugin must not have a `skills/` directory, or Claude Code stops treating the root file as the plugin's single skill and the command is no longer `/llm-wiki`. It refers to the wiki location as `${user_config.wiki_path}`; keep that placeholder to the one `Wiki root:` line, because `setup.sh` replaces every occurrence in a copied skill.
 
 ## Guidelines
 
@@ -72,7 +72,7 @@ Format: `type: short description`
 
 Types: `feat`, `fix`, `docs`, `templates`, `examples`
 
-Example: `feat: add /wiki export command for PDF generation`
+Example: `feat: add /llm-wiki export command for PDF generation`
 
 ## Releasing (maintainer)
 

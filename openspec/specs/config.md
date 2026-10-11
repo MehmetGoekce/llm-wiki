@@ -2,7 +2,7 @@
 
 ## Description
 
-Every /wiki command reads `llm-wiki.yml` before doing anything else. This config
+Every /llm-wiki command reads `llm-wiki.yml` before doing anything else. This config
 file determines tool mode (Logseq vs Obsidian), file paths, and namespace structure.
 All downstream behavior depends on this file being valid.
 
@@ -14,11 +14,11 @@ All downstream behavior depends on this file being valid.
 
 - REQ-600: The config file MUST be named `llm-wiki.yml` and located in the wiki
   root directory (the path specified as `wiki_path` in the config itself).
-- REQ-601: Every /wiki command (ingest, query, lint, status) MUST read the config
+- REQ-601: Every /llm-wiki command (ingest, query, lint, status) MUST read the config
   file as its first operation, before any wiki page operations.
 - REQ-602: If the config file does not exist, the system SHALL display an error:
-  "llm-wiki.yml not found in {wiki root}. Run /llm-wiki:setup (plugin) or setup.sh
-  to create one." and abort.
+  "llm-wiki.yml not found in {wiki root}. Run /llm-wiki setup to create one." and
+  abort. The `setup` subcommand is exempt: it creates the file.
 - REQ-670: The wiki root is resolved in this order: (1) the plugin's `wiki_path` user
   configuration, substituted into the skill as `${user_config.wiki_path}`; (2) for a
   copied skill, the absolute path written by `setup.sh` (specs/setup.md REQ-803).
@@ -102,7 +102,7 @@ GIVEN llm-wiki.yml contains:
       - Tech
       - Projects
 AND /home/user/Documents/Logseq/pages/ exists on disk
-WHEN any /wiki command starts
+WHEN any /llm-wiki command starts
 THEN the system SHALL load the config successfully
 AND set tool mode to Logseq (outliner format, triple-underscore files)
 AND resolve pages path to /home/user/Documents/Logseq/pages/
@@ -119,7 +119,7 @@ GIVEN llm-wiki.yml contains:
       - Business
       - Tech
 AND ~/Documents/ObsidianVault/ exists on disk
-WHEN any /wiki command starts
+WHEN any /llm-wiki command starts
 THEN the system SHALL load the config successfully
 AND set tool mode to Obsidian (flat markdown, directory hierarchy)
 AND resolve pages path to /home/user/Documents/ObsidianVault/
@@ -129,9 +129,9 @@ AND resolve pages path to /home/user/Documents/ObsidianVault/
 
 ```
 GIVEN no llm-wiki.yml file exists in the wiki root
-WHEN the user runs /wiki ingest "some source"
+WHEN the user runs /llm-wiki ingest "some source"
 THEN the system SHALL display: "llm-wiki.yml not found in {wiki root}. Run
-    /llm-wiki:setup (plugin) or setup.sh to create one."
+    /llm-wiki setup to create one."
 AND abort without modifying any files
 ```
 
@@ -139,7 +139,7 @@ AND abort without modifying any files
 
 ```
 GIVEN llm-wiki.yml contains tool: notion
-WHEN the user runs any /wiki command
+WHEN the user runs any /llm-wiki command
 THEN the system SHALL display: "Invalid tool 'notion'. Must be 'logseq' or 'obsidian'."
 AND abort without modifying any files
 ```
@@ -149,7 +149,7 @@ AND abort without modifying any files
 ```
 GIVEN llm-wiki.yml contains wiki_path: /home/user/nonexistent/path
 AND that path does not exist on disk
-WHEN the user runs any /wiki command
+WHEN the user runs any /llm-wiki command
 THEN the system SHALL display: "Wiki path '/home/user/nonexistent/path' does not exist."
 AND abort without modifying any files
 ```
@@ -158,7 +158,7 @@ AND abort without modifying any files
 
 ```
 GIVEN llm-wiki.yml contains namespaces: []
-WHEN the user runs any /wiki command
+WHEN the user runs any /llm-wiki command
 THEN the system SHALL display: "No namespaces configured in llm-wiki.yml."
 AND abort
 ```
@@ -167,7 +167,7 @@ AND abort
 
 ```
 GIVEN llm-wiki.yml has no memory_path key
-WHEN the user runs /wiki query "some question"
+WHEN the user runs /llm-wiki query "some question"
 THEN the system SHALL proceed without L1 Memory consultation
 AND NOT display an error (memory_path is optional)
 AND the answer SHALL be based on wiki pages only
@@ -177,7 +177,7 @@ AND the answer SHALL be based on wiki pages only
 
 ```
 GIVEN llm-wiki.yml contains l1_verify_days: 30
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN Rule 12 SHALL treat an asserts-current-behavior rule verified 31 days ago as due
 ```
 
@@ -198,7 +198,7 @@ AND memory_path SHALL resolve to /home/user/.claude/projects/x/memory/
 ```
 GIVEN the plugin's wiki_path is ~/notes/wiki
 AND ~/notes/wiki/llm-wiki.yml contains wiki_path: ~/Documents/OldWiki
-WHEN the user runs /wiki status
+WHEN the user runs /llm-wiki status
 THEN the system SHALL warn that the two paths differ
 AND report on ~/notes/wiki
 ```
@@ -206,9 +206,9 @@ AND report on ~/notes/wiki
 ### Scenario 11: Copied skill without substitution
 
 ```
-GIVEN skills/wiki/SKILL.md was copied by hand to .claude/commands/wiki.md
+GIVEN SKILL.md was copied by hand to .claude/commands/wiki.md
 AND no plugin is installed
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL abort with the REQ-671 message
 AND SHALL NOT read or write any wiki page
 ```
@@ -217,7 +217,7 @@ AND SHALL NOT read or write any wiki page
 
 ## Acceptance Criteria
 
-- [ ] Config read as first operation of every /wiki command
+- [ ] Config read as first operation of every /llm-wiki command
 - [ ] Missing config file produces clear error naming the wiki root and both setup paths
 - [ ] Wiki root comes from the plugin option or the path written by setup.sh, never guessed
 - [ ] tool value strictly validated (logseq or obsidian only)
@@ -233,6 +233,6 @@ AND SHALL NOT read or write any wiki page
 
 ## Dependencies
 
-- `scripts/init-wiki.sh` creates this config file, called by setup.sh or the setup skill
+- `scripts/init-wiki.sh` creates this config file, called by setup.sh or `/llm-wiki setup`
   (see specs/setup.md, specs/plugin.md)
 - All other specs (ingest, query, lint) depend on config being loaded first

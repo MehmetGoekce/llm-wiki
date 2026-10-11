@@ -1,4 +1,4 @@
-# Spec: /wiki prune — LRU-Demote (Index Eviction)
+# Spec: /llm-wiki prune — LRU-Demote (Index Eviction)
 
 ## Description
 
@@ -14,12 +14,12 @@ the counterpart to query (read path) and ingest (write path).
 prune is meant to run on a schedule (default cadence: 6 months). The command itself
 does NOT self-schedule; the user wires it via their own scheduler.
 
-`/wiki prune --l1` is a separate mode for L1 memory. Access frequency cannot find stale
+`/llm-wiki prune --l1` is a separate mode for L1 memory. Access frequency cannot find stale
 L1 rules (every L1 file is loaded every session), so this mode works on claim class and
 verification date (specs/l1-l2-routing.md REQ-370-379): it classifies unclassified
 files, checks due behavior claims against read-only evidence, and lets the user
 re-verify, demote to L2, or delete each one. `--l1` does NOT run the L2 index eviction,
-and plain `/wiki prune` does NOT touch L1.
+and plain `/llm-wiki prune` does NOT touch L1.
 
 ---
 
@@ -70,7 +70,7 @@ and plain `/wiki prune` does NOT touch L1.
 
 #### Phase L1-1: Scope
 
-- REQ-900: `/wiki prune --l1` SHALL require `memory_path`. If it is absent, the system
+- REQ-900: `/llm-wiki prune --l1` SHALL require `memory_path`. If it is absent, the system
   SHALL display "memory_path not configured — L1 mode unavailable." and abort.
 - REQ-901: The system SHALL skip the L1 index file (specs/l1-l2-routing.md REQ-377).
 - REQ-902: The batch size SHALL default to 10 and be overridable via `--batch N`. The
@@ -167,7 +167,7 @@ and plain `/wiki prune` does NOT touch L1.
 GIVEN Wiki/Tech/Legacy-Foo was last logged in the Access-Log on 2025-09-01
 AND today is 2026-06-07 (≈ 9 months, exceeds the 6-month threshold)
 AND it is a knowledge page (not a hub, not active project, not Schema/Dashboard/Access-Log)
-WHEN the user runs /wiki prune
+WHEN the user runs /llm-wiki prune
 THEN the system SHALL list Wiki/Tech/Legacy-Foo as a demote candidate (last access 2025-09-01, 9 mo)
 AND on confirmation SHALL add archived:: 2026-06-07 to the page (created::/updated:: unchanged)
 AND move its routing line from the Wiki/Tech hub `### Index` to `### Archive`
@@ -180,7 +180,7 @@ AND commit the change
 ```
 GIVEN Wiki/Learning/Old-Course has no Access-Log entries
 AND its created:: date is 2025-08-01 (older than 6 months)
-WHEN the user runs /wiki prune
+WHEN the user runs /llm-wiki prune
 THEN the system SHALL treat 2025-08-01 as its last-access proxy
 AND list it as a demote candidate
 ```
@@ -190,7 +190,7 @@ AND list it as a demote candidate
 ```
 GIVEN Wiki/Projects/Big-Migration has status:: active
 AND it has not been read in 8 months
-WHEN the user runs /wiki prune
+WHEN the user runs /llm-wiki prune
 THEN the system SHALL NOT list it as a demote candidate (active projects are exempt)
 ```
 
@@ -198,7 +198,7 @@ THEN the system SHALL NOT list it as a demote candidate (active projects are exe
 
 ```
 GIVEN several pages last accessed between 3 and 5 months ago
-WHEN the user runs /wiki prune --months 3
+WHEN the user runs /llm-wiki prune --months 3
 THEN the system SHALL list every page with no access in the last 3 months as a candidate
 ```
 
@@ -206,7 +206,7 @@ THEN the system SHALL list every page with no access in the last 3 months as a c
 
 ```
 GIVEN Wiki/Tech/Legacy-Foo is demoted (archived::, routing line in `### Archive`)
-WHEN a later /wiki query L3 grep matches it and reads it in full
+WHEN a later /llm-wiki query L3 grep matches it and reads it in full
 THEN re-promotion is offered by the query command (specs/query.md REQ-452), NOT prune
 AND prune SHALL never auto-promote pages
 ```
@@ -215,7 +215,7 @@ AND prune SHALL never auto-promote pages
 
 ```
 GIVEN Wiki/Projects/Acme links to [[Wiki/Tech/Legacy-Foo]]
-WHEN Wiki/Tech/Legacy-Foo is demoted by /wiki prune
+WHEN Wiki/Tech/Legacy-Foo is demoted by /llm-wiki prune
 THEN the [[Wiki/Tech/Legacy-Foo]] link in Wiki/Projects/Acme SHALL still resolve
 AND lint SHALL NOT report it as a broken reference
 ```
@@ -225,7 +225,7 @@ AND lint SHALL NOT report it as a broken reference
 ```
 GIVEN llm-wiki.yml is configured with tool: obsidian
 AND Wiki/Tech/Legacy-Foo.md is a cold page
-WHEN the user runs /wiki prune
+WHEN the user runs /llm-wiki prune
 THEN the system SHALL add archived: <today> to the YAML frontmatter
 AND move the routing line within the Wiki/Tech hub (Wiki/Tech/_index.md) from
     `### Index` to `### Archive`
@@ -236,7 +236,7 @@ AND keep the file at Wiki/Tech/Legacy-Foo.md (no move)
 
 ```
 GIVEN memory_path holds 25 unclassified L1 files
-WHEN the user runs /wiki prune --l1
+WHEN the user runs /llm-wiki prune --l1
 THEN the system SHALL propose asserts-current-behavior values for 10 files, each with a reason
     e.g. "feedback_pm2_reload.md → true (claims PM2 reload fails with npm start)"
          "feedback_no_ai_attribution.md → false (records a preference)"
@@ -250,7 +250,7 @@ AND report 15 files still unclassified
 GIVEN feedback_hook_path.md (asserts-current-behavior: true, verified: 2026-02-01) says
     "the hook lives at ~/.claude/hooks/rtk-rewrite.sh"
 AND that path does not exist, but settings.json references ~/Projekte/tools/rtk/hooks/rtk-rewrite.sh
-WHEN the user runs /wiki prune --l1
+WHEN the user runs /llm-wiki prune --l1
 THEN the system SHALL report verdict contradicts, with both paths as evidence
 AND recommend demote or delete
 AND offer re-verify only together with a corrected rule text naming the new path
@@ -261,7 +261,7 @@ AND write nothing until the user chooses
 
 ```
 GIVEN reference_hosting_prices.md (asserts-current-behavior: true, no verified) states a monthly price
-WHEN the user runs /wiki prune --l1
+WHEN the user runs /llm-wiki prune --l1
 THEN the system SHALL report verdict inconclusive — "not locally verifiable"
 AND NOT fetch the provider website
 ```
@@ -283,7 +283,7 @@ AND commit the wiki change
 
 ```
 GIVEN reference_strapi_credentials.md is due
-WHEN the user runs /wiki prune --l1
+WHEN the user runs /llm-wiki prune --l1
 THEN the evidence SHALL show only whether the referenced location exists, never the value
 AND the offered actions SHALL be re-verify and delete only
 ```
@@ -295,7 +295,7 @@ GIVEN feedback_e2e_gotchas.md claims (a) `data/` in .gitignore also matches lib/
     (b) a fresh worktree lacks public/clients/logo.svg, (c) a proxy rewrites `next start`
 AND .gitignore contains `data/`, public/clients/logo.svg no longer exists anywhere,
     and (c) can only be observed by starting a server
-WHEN the user runs /wiki prune --l1
+WHEN the user runs /llm-wiki prune --l1
 THEN the system SHALL report (a) supports [file], (b) contradicts [file], (c) unchecked
 AND the overall verdict SHALL be contradicts (partial), naming claim (b) and unchecked (c)
 AND the proposed correction SHALL change the body, the description, and the index line
@@ -315,9 +315,9 @@ AND the MEMORY.md pointer to project_x_status.md SHALL be removed
 
 ```
 GIVEN cold L2 pages and due L1 rules both exist
-WHEN the user runs /wiki prune
+WHEN the user runs /llm-wiki prune
 THEN only L2 index eviction SHALL run
-WHEN the user runs /wiki prune --l1
+WHEN the user runs /llm-wiki prune --l1
 THEN only L1 classification and verification SHALL run
 ```
 

@@ -6,5 +6,5 @@ graph LR
     L3 --> P1
     P1 --> LOG[Phase 1b<br/>Append to Access-Log<br/>one line per read]
     LOG --> SYN[Phase 2<br/>Synthesize<br/>+ source attribution]
-    LOG -. feeds .-> PRUNE[/wiki prune<br/>evict cold pages]
+    LOG -. feeds .-> PRUNE[/llm-wiki prune<br/>evict cold pages]
     PRUNE -. demote .-> ARCH[Hub Archive<br/>archived:: marker<br/>file stays, links intact]
