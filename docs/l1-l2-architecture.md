@@ -50,13 +50,13 @@ graph TB
     CLAUDE[Claude Code Session] -->|Always has| L1R
     CLAUDE -->|Always has| L1I
     CLAUDE -->|Always has| L1C
-    CLAUDE -->|/wiki query| L2P
-    CLAUDE -->|/wiki query| L2W
-    CLAUDE -->|/wiki query| L2K
-    CLAUDE -->|/wiki query| L2B
-    CLAUDE -->|/wiki ingest| EXT1
-    CLAUDE -->|/wiki ingest| EXT2
-    CLAUDE -->|/wiki ingest| EXT3
+    CLAUDE -->|/llm-wiki query| L2P
+    CLAUDE -->|/llm-wiki query| L2W
+    CLAUDE -->|/llm-wiki query| L2K
+    CLAUDE -->|/llm-wiki query| L2B
+    CLAUDE -->|/llm-wiki ingest| EXT1
+    CLAUDE -->|/llm-wiki ingest| EXT2
+    CLAUDE -->|/llm-wiki ingest| EXT3
 ```
 
 ## The Routing Rule
@@ -128,7 +128,7 @@ The total size is small -- typically under 20 files, each a few lines. This is d
 
 ## L2 in Practice: The Wiki
 
-L2 is the wiki itself -- dozens to hundreds of structured pages organized by namespace. Unlike L1, these pages are only loaded when relevant. A `/wiki query "what is the status of project X?"` triggers Claude to read 3-5 relevant pages, not all 100.
+L2 is the wiki itself -- dozens to hundreds of structured pages organized by namespace. Unlike L1, these pages are only loaded when relevant. A `/llm-wiki query "what is the status of project X?"` triggers Claude to read 3-5 relevant pages, not all 100.
 
 The key properties of L2:
 
@@ -148,7 +148,7 @@ The schema explicitly defines the boundary so the system can self-enforce it:
 - Same info in both? → Lint warning
 ```
 
-This is not just documentation -- the `/wiki lint` command actively checks for L1/L2 duplicates. If the same rule appears in both a memory file and a wiki page, it flags a warning. Duplicates mean one copy will eventually go stale, leading to contradictory knowledge.
+This is not just documentation -- the `/llm-wiki lint` command actively checks for L1/L2 duplicates. If the same rule appears in both a memory file and a wiki page, it flags a warning. Duplicates mean one copy will eventually go stale, leading to contradictory knowledge.
 
 ## Evolving the Boundary
 
@@ -159,11 +159,11 @@ The L1/L2 boundary is not static. As your wiki grows, some knowledge migrates:
 - **Merge**: Two L1 files cover related gotchas. Combine them into one to keep L1 lean.
 - **Archive**: A project completes. Its L1 gotchas become L2 historical notes.
 
-`/wiki lint` flags L1/L2 duplicates that need resolution. Promotion from L2 to L1 is still a manual decision. Demotion out of L1 has its own mechanism, described next.
+`/llm-wiki lint` flags L1/L2 duplicates that need resolution. Promotion from L2 to L1 is still a manual decision. Demotion out of L1 has its own mechanism, described next.
 
 ## Keeping L1 Honest: Claim Class + Verification
 
-Access-based eviction (`/wiki prune`) only covers L2. Every L1 file loads every session, so "last used" carries no signal: a stale L1 rule never looks cold. It shows up as the agent confidently acting on an outdated assumption.
+Access-based eviction (`/llm-wiki prune`) only covers L2. Every L1 file loads every session, so "last used" carries no signal: a stale L1 rule never looks cold. It shows up as the agent confidently acting on an outdated assumption.
 
 So L1 staleness is tied to *what kind of claim* a rule makes, not to how often it is read. Each L1 file can carry one frontmatter key:
 
@@ -174,8 +174,8 @@ Behavior claims also carry `verified: <date>`. A claim is **due** when it was ne
 
 The loop:
 
-1. **`/wiki lint`** (Rule 12) reports due claims and the number of unclassified files. It never writes to L1 and never prints L1 file bodies — L1 may hold credentials.
-2. **`/wiki prune --l1`** classifies unclassified files in batches (it proposes, you confirm), then checks due claims against **read-only, local evidence**: does the path exist, does `--help` still list the flag, does the dependency manifest still pin that version. Each claim inside a rule gets its own verdict — supports, contradicts, or inconclusive (e.g. pricing or third-party behavior that cannot be checked locally) — with its basis: a read-only command, the implementing source code, or a file check. Rules usually bundle several claims, so partial verdicts are normal and marked as such.
+1. **`/llm-wiki lint`** (Rule 12) reports due claims and the number of unclassified files. It never writes to L1 and never prints L1 file bodies — L1 may hold credentials.
+2. **`/llm-wiki prune --l1`** classifies unclassified files in batches (it proposes, you confirm), then checks due claims against **read-only, local evidence**: does the path exist, does `--help` still list the flag, does the dependency manifest still pin that version. Each claim inside a rule gets its own verdict — supports, contradicts, or inconclusive (e.g. pricing or third-party behavior that cannot be checked locally) — with its basis: a read-only command, the implementing source code, or a file check. Rules usually bundle several claims, so partial verdicts are normal and marked as such.
 3. **You decide per rule:** re-verify (stamps `verified`; on a contradiction only together with a corrected rule text), demote to L2 (the rule becomes a history block on the matching wiki page, then the L1 file and its index line are removed), or delete. A correction reaches everywhere the claim is loaded from: body, `description`, and the index line. Before a file is removed, references to it from other L1 files are rewritten or listed. L1 is not git-tracked, so nothing is written without confirmation, and you see what carries over to L2 and what is dropped before removal. Credential rules are never demoted to L2.
 
 **What this does not do (yet):** warn at the moment a due rule is about to justify an action. Claude Code loads L1, not llm-wiki, so there is no hook to enforce such a gate. A due rule is caught on the next `lint` / `prune --l1` run, not mid-session. A planning-vs-action gate — soft note when a stale rule informs planning, loud warning when it justifies a write — is on the roadmap.

@@ -14,4 +14,4 @@ Routing lines, one per child page. `query` Phase 0 reads only this list to route
 
 ### Archive
 
-Cold pages demoted by `/wiki prune` land here — out of routing, file still on disk and greppable (L3).
+Cold pages demoted by `/llm-wiki prune` land here — out of routing, file still on disk and greppable (L3).

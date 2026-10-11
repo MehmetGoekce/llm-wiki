@@ -50,8 +50,7 @@ that provides a structured knowledge management system for LLM assistants.
 | File | Purpose |
 |------|---------|
 | `.claude-plugin/` | Plugin manifest (`plugin.json`) and marketplace (`marketplace.json`) |
-| `skills/wiki/SKILL.md` | /wiki skill definition (the prompt Claude Code executes) |
-| `skills/setup/SKILL.md` | Setup skill: collects answers, runs the init script |
+| `SKILL.md` | /llm-wiki skill definition (the prompt Claude Code executes), including the `setup` subcommand. Root skill of the plugin: no `skills/` directory |
 | `scripts/init-wiki.sh` | Non-interactive page and config creation |
 | `setup.sh` | Interactive installer for installs without the plugin; calls the init script |
 | `config.example.yml` | Configuration template |

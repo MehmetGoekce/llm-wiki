@@ -9,14 +9,14 @@ inspired by CPU memory hierarchies.
 - **Owner:** Mehmet Goekce / MEMOTECH
 - **License:** MIT (open-source)
 - **Repository:** github.com/MehmetGoekce/llm-wiki
-- **Status:** Released (v1.6), actively developed
+- **Status:** Released (v1.7), actively developed
 
 ## Architecture
 
 - **L1 (Fast, auto-loaded):** Claude Code memory directory (~10-20 files). Rules, gotchas,
   credentials, identity. Loaded every session. Git-excluded.
 - **L2 (On-demand):** Logseq or Obsidian wiki (~50-200 pages). Projects, workflows,
-  research, deep knowledge. Queried via `/wiki` commands. Git-tracked.
+  research, deep knowledge. Queried via `/llm-wiki` commands. Git-tracked.
 
 ## Tech Stack
 
@@ -34,7 +34,7 @@ inspired by CPU memory hierarchies.
 |------|-----|---------------|
 | Maintainer | Mehmet Goekce | Architecture, releases, specs |
 | Contributors | Open-source community | Features, bug fixes, templates |
-| Users | Claude Code users | Install, configure, use /wiki commands |
+| Users | Claude Code users | Install, configure, use /llm-wiki commands |
 
 ## Constraints
 
@@ -50,13 +50,13 @@ inspired by CPU memory hierarchies.
 
 | Spec | Covers | Requirements | Scenarios |
 |------|--------|-------------|-----------|
-| specs/ingest.md | /wiki ingest — 5-phase source processing pipeline | 36 | 11 |
-| specs/query.md | /wiki query — two-stage routing, synthesis, access log | 26 | 13 |
-| specs/lint.md | /wiki lint — 13 automated health checks with auto-fix | 58 | 16 |
-| specs/prune.md | /wiki prune — L2 index eviction, `--l1` verification | 39 | 15 |
+| specs/ingest.md | /llm-wiki ingest — 5-phase source processing pipeline | 36 | 11 |
+| specs/query.md | /llm-wiki query — two-stage routing, synthesis, access log | 26 | 13 |
+| specs/lint.md | /llm-wiki lint — 13 automated health checks with auto-fix | 58 | 16 |
+| specs/prune.md | /llm-wiki prune — L2 index eviction, `--l1` verification | 39 | 15 |
 | specs/schema.md | Page types, properties, validation, format rules | 49 | 10 |
 | specs/config.md | Wiki root resolution, llm-wiki.yml loading, validation, error handling | 23 | 11 |
 | specs/setup.md | setup.sh interactive installer, page and config creation | 49 | 11 |
-| specs/plugin.md | Plugin manifest, marketplace, wiki and setup skills, init script | 28 | 6 |
+| specs/plugin.md | Plugin manifest, marketplace, root skill `/llm-wiki`, init script | 28 | 6 |
 | specs/l1-l2-routing.md | L1/L2 boundary decision logic, L1 staleness | 40 | 11 |
 | **Total** | **Complete system coverage** | **348** | **104** |

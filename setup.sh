@@ -121,11 +121,11 @@ fi
 echo -e "${BOLD}Creating wiki pages...${NC}"
 "$SCRIPT_DIR/scripts/init-wiki.sh" "${INIT_ARGS[@]}" | sed 's/^/  /'
 
-# ----- Step 8: Install /wiki skill -----
+# ----- Step 8: Copy the skill into a project -----
 echo ""
-echo -e "${BOLD}Install /wiki skill for Claude Code?${NC}"
+echo -e "${BOLD}Copy the skill into a Claude Code project?${NC}"
 echo "Recommended instead: install the llm-wiki plugin (see README), which updates itself."
-echo "This step copies the skill to one project's .claude/commands/ directory; the copy does not update."
+echo "This step copies the skill to one project's .claude/commands/wiki.md. The copy is invoked as /wiki and does not update."
 read -p "Project path (or 'skip'): " project_path
 
 if [ "$project_path" != "skip" ] && [ -n "$project_path" ]; then
@@ -133,21 +133,23 @@ if [ "$project_path" != "skip" ] && [ -n "$project_path" ]; then
     COMMANDS_DIR="$project_path/.claude/commands"
     mkdir -p "$COMMANDS_DIR"
 
-    # The skill names the wiki root as a plugin option; a copied skill gets the path written in.
-    python3 - "$SCRIPT_DIR/skills/wiki/SKILL.md" "$COMMANDS_DIR/wiki.md" "$wiki_path" << 'PYEOF'
+    # The skill names the wiki root and the plugin directory as plugin variables; a copied skill
+    # gets both paths written in.
+    python3 - "$SCRIPT_DIR/SKILL.md" "$COMMANDS_DIR/wiki.md" "$wiki_path" "$SCRIPT_DIR" << 'PYEOF'
 import sys
 
-source, target, wiki_path = sys.argv[1:4]
+source, target, wiki_path, repo_dir = sys.argv[1:5]
 with open(source) as f:
     skill = f.read()
+skill = skill.replace("${user_config.wiki_path}", wiki_path).replace("${CLAUDE_PLUGIN_ROOT}", repo_dir)
 with open(target, "w") as f:
-    f.write(skill.replace("${user_config.wiki_path}", wiki_path))
+    f.write(skill)
 PYEOF
 
-    if grep -q '\${user_config\.' "$COMMANDS_DIR/wiki.md"; then
+    if grep -q '\${user_config\.\|\${CLAUDE_PLUGIN_ROOT}' "$COMMANDS_DIR/wiki.md"; then
         echo -e "${YELLOW}Warning: $COMMANDS_DIR/wiki.md still contains a plugin placeholder.${NC}"
     fi
-    echo -e "${GREEN}Installed /wiki skill to $COMMANDS_DIR/wiki.md${NC}"
+    echo -e "${GREEN}Copied the skill to $COMMANDS_DIR/wiki.md (invoke it as /wiki)${NC}"
 fi
 
 # ----- Done -----

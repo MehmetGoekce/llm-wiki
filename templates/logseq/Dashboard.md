@@ -2,7 +2,7 @@
 - updated:: {{DATE}}
 - ## Wiki Dashboard
 	- Overview and health status of your LLM Wiki.
-	- Last updated via `/wiki status` or `/wiki lint`.
+	- Last updated via `/llm-wiki status` or `/llm-wiki lint`.
 - ## Namespaces
 {{NAMESPACE_LINKS}}
 - ## Schema

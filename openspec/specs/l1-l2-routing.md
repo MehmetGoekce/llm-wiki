@@ -74,7 +74,7 @@ session starts and context bloat; too little in L1 = repeated mistakes.
 - REQ-353: (Superseded by REQ-370-379.) Access-based staleness does not apply to L1:
   every L1 file is auto-loaded every session, so "last referenced" carries no signal.
   L1 staleness is detected by claim class and verification date instead.
-- REQ-354: The `/wiki lint` command SHOULD flag L2 pages queried in every session
+- REQ-354: The `/llm-wiki lint` command SHOULD flag L2 pages queried in every session
   as candidates for L1 promotion.
 
 ### L1 Staleness (Claim Class + Verification Date)
@@ -101,7 +101,7 @@ agent confidently acting on an outdated assumption. Staleness is therefore tied 
 - REQ-375: An L1 memory file WITHOUT the `asserts-current-behavior` key is
   **unclassified**. Unclassified files SHALL NOT be reported as due; they SHALL only be
   counted (see specs/lint.md REQ-222) and offered for classification by
-  `/wiki prune --l1`.
+  `/llm-wiki prune --l1`.
 - REQ-376: The system SHALL read both keys either at the top level of the frontmatter
   or inside a `metadata:` block. When writing, it SHALL use the location the file
   already uses for its other metadata (a `metadata:` block if present, top level
@@ -109,9 +109,9 @@ agent confidently acting on an outdated assumption. Staleness is therefore tied 
 - REQ-377: The L1 index file (e.g. `MEMORY.md`) SHALL be exempt from classification
   and verification; it is an index, not a rule. Its lines are auto-loaded too, so they
   SHALL be maintained together with the rules they point to (see specs/prune.md REQ-926).
-- REQ-378: Detecting due rules is read-only and belongs to `/wiki lint` (Rule 12).
+- REQ-378: Detecting due rules is read-only and belongs to `/llm-wiki lint` (Rule 12).
   Acting on them — classify, re-verify, demote to L2, delete — belongs to
-  `/wiki prune --l1` and requires per-item user confirmation.
+  `/llm-wiki prune --l1` and requires per-item user confirmation.
 - REQ-379: Warning at the moment a due rule is about to justify an action
   (planning vs. action gate) is OUT OF SCOPE for this spec. L1 loading is performed
   by Claude Code, not by llm-wiki; the system cannot enforce a runtime gate and SHALL
@@ -119,7 +119,7 @@ agent confidently acting on an outdated assumption. Staleness is therefore tied 
 
 ### Routing During Ingest
 
-- REQ-360: During /wiki ingest Phase 1, the system SHALL apply the routing rule
+- REQ-360: During /llm-wiki ingest Phase 1, the system SHALL apply the routing rule
   (REQ-300-304) to each extracted fact.
 - REQ-361: Facts routed to L1 SHALL NOT be written to wiki pages. The system SHALL
   instead recommend saving them to the memory directory.
@@ -200,17 +200,17 @@ AND the system SHALL NOT create a wiki page for name spelling
 
 ```
 GIVEN the L1 memory directory contains 35 files
-WHEN the user runs /wiki lint or /wiki status
+WHEN the user runs /llm-wiki lint or /llm-wiki status
 THEN the system SHALL warn: "L1 has 35 files (recommended: 10-20, audit at 30+).
     Review for candidates to demote to L2."
-AND the system SHOULD point to `/wiki prune --l1` for classification and verification
+AND the system SHOULD point to `/llm-wiki prune --l1` for classification and verification
 ```
 
 ### Scenario 7: L2 page frequently queried — promotion candidate
 
 ```
 GIVEN the wiki page Wiki/Tech/Deployment is queried in 8 of the last 10 sessions
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL flag the page as an L1 promotion candidate (info)
 AND suggest: "Wiki/Tech/Deployment is queried almost every session.
     Consider promoting key rules to L1 memory."
@@ -221,7 +221,7 @@ AND suggest: "Wiki/Tech/Deployment is queried almost every session.
 ```
 GIVEN L1 file feedback_no_ai_attribution.md has asserts-current-behavior: false
 AND the file was last modified 400 days ago
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL NOT report the file as due for verification
 ```
 
@@ -231,16 +231,16 @@ THEN the system SHALL NOT report the file as due for verification
 GIVEN L1 file feedback_pm2_reload.md has asserts-current-behavior: true
 AND verified: 2026-03-01
 AND l1_verify_days is 90 and today is 2026-06-15 (106 days later)
-WHEN the user runs /wiki lint
+WHEN the user runs /llm-wiki lint
 THEN the system SHALL report the file as "L1 verification due" (warning)
-AND suggest: "Run /wiki prune --l1 to check this claim against evidence."
+AND suggest: "Run /llm-wiki prune --l1 to check this claim against evidence."
 ```
 
 ### Scenario 7d: Metadata block is respected
 
 ```
 GIVEN an L1 file whose frontmatter contains `metadata:` with `type: feedback`
-WHEN /wiki prune --l1 classifies it as asserts-current-behavior: true
+WHEN /llm-wiki prune --l1 classifies it as asserts-current-behavior: true
 THEN the key SHALL be written inside the `metadata:` block
 AND name, description, and every other existing key SHALL remain unchanged and in order
 ```

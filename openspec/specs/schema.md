@@ -92,7 +92,7 @@ lint (validation).
 - REQ-554: Every namespace MUST have exactly one hub page.
 - REQ-555: Each hub page MUST carry an `### Index` section: one **routing line** per
   active child page, formatted `[[Wiki/NS/Page]] -- <description, <=120 chars> #tags`.
-  This index is the retrieval entry point read by `/wiki query` Phase 0 (two-stage routing).
+  This index is the retrieval entry point read by `/llm-wiki query` Phase 0 (two-stage routing).
 - REQ-556: Each hub page MAY carry an `### Archive` section holding the routing lines of
   demoted (cold) child pages. Lint flags an active page in `### Archive`, or a demoted
   page (see Archived Pages) still in `### Index`.
@@ -102,7 +102,7 @@ lint (validation).
 
 ### Archived / Demoted Pages
 
-- REQ-565: A page demoted by `/wiki prune` SHALL be marked with the optional property
+- REQ-565: A page demoted by `/llm-wiki prune` SHALL be marked with the optional property
   `archived:: <date>` (the date it was evicted from the live index). The presence of
   `archived::` is the canonical "demoted" marker, valid on ANY page type.
 - REQ-566: For pages whose `status` enum allows it (Entity: `active|inactive|archived`),
@@ -112,7 +112,7 @@ lint (validation).
 - REQ-567: Demotion SHALL NOT rename or move the page file. The tool links by page name,
   so a move would break incoming `[[links]]`. A demoted page keeps its filename and
   location; only its routing line moves from the hub `### Index` to `### Archive`.
-- REQ-568: A demoted page remains greppable as an L3 fallback. If `/wiki query` reads it
+- REQ-568: A demoted page remains greppable as an L3 fallback. If `/llm-wiki query` reads it
   again, the system SHOULD offer to re-promote it (routing line back to `### Index`,
   `archived::` removed).
 
@@ -120,7 +120,7 @@ lint (validation).
 
 - REQ-569: The wiki SHALL contain a system page `Wiki/Reference/Access-Log` with
   properties `access-log:: true` and `type:: reference`, holding an append-only `## Log`
-  block. `/wiki query` appends one line per full-page read; `/wiki prune` reads it to
+  block. `/llm-wiki query` appends one line per full-page read; `/llm-wiki prune` reads it to
   compute last-access per page. This page is EXEMPT from orphan, stale, and demote rules.
 
 ### Date Validation

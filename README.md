@@ -20,7 +20,7 @@ graph TB
         L1 --> L1C
     end
 
-    subgraph "On Demand — /wiki query"
+    subgraph "On Demand — /llm-wiki query"
         L2[L2: Wiki]
         L2P[Projects & History]
         L2W[Workflows & Processes]
@@ -50,10 +50,10 @@ Everyone loved the concept. Almost nobody built one. The gist describes *what* t
 
 ## Why use this?
 
-- **5-minute setup.** Install the plugin, run `/llm-wiki:setup`, and you have a schema, namespaces, and git tracking. No manual design needed.
-- **Claude becomes your wiki maintainer.** `/wiki ingest` updates 5-15 pages with cross-references from a single source.
+- **5-minute setup.** Install the plugin, run `/llm-wiki setup`, and you have a schema, namespaces, and git tracking. No manual design needed.
+- **Claude becomes your wiki maintainer.** `/llm-wiki ingest` updates 5-15 pages with cross-references from a single source.
 - **L1/L2 architecture.** Auto-loaded rules in memory (L1) + deep knowledge in the wiki (L2). No other tool has this.
-- **Built-in quality checks.** `/wiki lint` finds orphan pages, stale content, broken refs, and credential leaks.
+- **Built-in quality checks.** `/llm-wiki lint` finds orphan pages, stale content, broken refs, and credential leaks.
 - **Logseq + Obsidian.** Use whichever you already have. No tool switch required.
 
 ## Quick Start
@@ -75,13 +75,13 @@ Claude Code asks for one value, the **Wiki root**: your Logseq graph or Obsidian
 may be empty or not exist yet. Then, in any project:
 
 ```
-/llm-wiki:setup
-/llm-wiki:wiki ingest "your first source"
-/llm-wiki:wiki query "what do I know about X?"
-/llm-wiki:wiki lint
+/llm-wiki setup
+/llm-wiki ingest "your first source"
+/llm-wiki query "what do I know about X?"
+/llm-wiki lint
 ```
 
-`/llm-wiki:setup` asks which tool you use and which namespaces you want, then creates the Schema,
+`/llm-wiki setup` asks which tool you use and which namespaces you want, then creates the Schema,
 Dashboard, hub pages, Access-Log and `llm-wiki.yml`. The wiki starts sparse and gets denser with
 every ingest. New releases reach you through the plugin; nothing to copy.
 
@@ -96,14 +96,20 @@ cd llm-wiki
 ```
 
 `setup.sh` asks the same questions in the terminal, creates the same pages, and can copy the skill
-into one project's `.claude/commands/`. That copy is invoked as `/wiki` and does not update itself.
+into one project's `.claude/commands/wiki.md`. That copy is invoked as `/wiki <command>` and does not
+update itself.
 
-The rest of this README writes `/wiki <command>`. With the plugin, type `/llm-wiki:wiki <command>`.
+The rest of this README writes `/llm-wiki <command>`. With a copied skill, type `/wiki <command>`.
 
 ### Moving from a copied skill to the plugin
 
 Install the plugin, enter your existing wiki directory as Wiki root, and delete the copied
 `.claude/commands/wiki.md` from your project. The wiki itself needs no change.
+
+### Coming from v1.6.0
+
+The plugin's commands lost their second part: `/llm-wiki:wiki ingest` is now `/llm-wiki ingest`, and
+`/llm-wiki:setup` is now `/llm-wiki setup`. Update the plugin and use the new names.
 
 ## The L1/L2 Architecture
 
@@ -118,7 +124,7 @@ The solution maps to a concept every engineer knows: **CPU cache hierarchy.**
 | Layer | What | Size | Loading | Contains |
 |-------|------|------|---------|----------|
 | **L1** | Claude Code Memory | ~10-20 files | Auto-loaded every session | Rules, gotchas, identity, credentials |
-| **L2** | Wiki (Logseq/Obsidian) | ~50-200 pages | On-demand via `/wiki query` | Projects, workflows, research, deep knowledge |
+| **L2** | Wiki (Logseq/Obsidian) | ~50-200 pages | On-demand via `/llm-wiki query` | Projects, workflows, research, deep knowledge |
 
 ```mermaid
 graph TB
@@ -132,7 +138,7 @@ graph TB
         L1 --> L1C
     end
 
-    subgraph "On Demand — /wiki query"
+    subgraph "On Demand — /llm-wiki query"
         L2[L2: Wiki]
         L2P[Projects & History]
         L2W[Workflows & Processes]
@@ -161,16 +167,16 @@ For the full deep-dive, see [docs/l1-l2-architecture.md](docs/l1-l2-architecture
 
 | Command | Description |
 |---------|-------------|
-| `/wiki ingest <source>` | Process a source (URL, file, text), update 5-15 wiki pages |
-| `/wiki query <question>` | Two-stage search via hub index, synthesize answer with source attribution |
-| `/wiki prune [--months N]` | LRU-Demote: evict cold pages from the live index (default 6 months) |
-| `/wiki prune --l1` | L1-Verification: classify L1 rules, check due behavior claims against local evidence, re-verify / demote / delete |
-| `/wiki lint [--fix]` | Health check: orphans, stale pages, broken refs, index drift, credential leaks, due L1 claims |
-| `/wiki status` | Metrics dashboard: page count, health, hot/cold profile, recent changes |
+| `/llm-wiki ingest <source>` | Process a source (URL, file, text), update 5-15 wiki pages |
+| `/llm-wiki query <question>` | Two-stage search via hub index, synthesize answer with source attribution |
+| `/llm-wiki prune [--months N]` | LRU-Demote: evict cold pages from the live index (default 6 months) |
+| `/llm-wiki prune --l1` | L1-Verification: classify L1 rules, check due behavior claims against local evidence, re-verify / demote / delete |
+| `/llm-wiki lint [--fix]` | Health check: orphans, stale pages, broken refs, index drift, credential leaks, due L1 claims |
+| `/llm-wiki status` | Metrics dashboard: page count, health, hot/cold profile, recent changes |
 
 ### Ingest Flow
 
-Ingest is the core operation. When you run `/wiki ingest "deployed v2.0 to production"`, here is what happens:
+Ingest is the core operation. When you run `/llm-wiki ingest "deployed v2.0 to production"`, here is what happens:
 
 ```mermaid
 graph LR
@@ -200,7 +206,7 @@ Query is **two-stage**, the way a CPU resolves an address before touching memory
 
 Prune is the eviction layer that keeps routing precise as the wiki grows. It reads the Access-Log, finds **cold pages** (no read in N months, default 6), and evicts them from the live index — the routing line moves from the hub `### Index` to `### Archive` and the page is marked `archived::`. This is **demotion, not deletion**: the file stays in place, every incoming `[[link]]` stays valid, and the page is still found by the L3 grep fallback (and re-promoted automatically if queried again). Crucially, prune never renames or moves a file — the wiki tool links by page name, so a move would break every backlink. Run it on a schedule (the command does not self-schedule).
 
-**`--l1` is the L1 counterpart.** Access frequency cannot find stale L1 rules — every L1 file loads every session, so a stale rule never looks cold; it shows up as the agent confidently acting on an outdated assumption. So L1 files carry a claim class: `asserts-current-behavior: true` for claims about a system's current state (a path, flag, version, quirk) and `false` for decisions and preferences, which never go stale. Behavior claims carry a `verified` date. `/wiki prune --l1` classifies unclassified files (it proposes, you confirm), checks due claims against read-only local evidence, and lets you re-verify, demote the rule to L2 as history, or delete it. It does not warn mid-session when a stale rule is about to justify an action — Claude Code loads L1, so there is no hook for that; it is on the roadmap.
+**`--l1` is the L1 counterpart.** Access frequency cannot find stale L1 rules — every L1 file loads every session, so a stale rule never looks cold; it shows up as the agent confidently acting on an outdated assumption. So L1 files carry a claim class: `asserts-current-behavior: true` for claims about a system's current state (a path, flag, version, quirk) and `false` for decisions and preferences, which never go stale. Behavior claims carry a `verified` date. `/llm-wiki prune --l1` classifies unclassified files (it proposes, you confirm), checks due claims against read-only local evidence, and lets you re-verify, demote the rule to L2 as history, or delete it. It does not warn mid-session when a stale rule is about to justify an action — Claude Code loads L1, so there is no hook for that; it is on the roadmap.
 
 ### Lint
 
@@ -249,7 +255,7 @@ The difference between a dead wiki and a living one is page quality.
 - type:: knowledge
 - domain:: content
 - ## Newsletter
-  - To be filled via /wiki ingest.
+  - To be filled via /llm-wiki ingest.
 ```
 
 **After** -- synthesized from multiple sources over several ingest operations:

@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-10-11
+
+One command. v1.6.0 shipped the plugin as two skills, `/llm-wiki:wiki` and `/llm-wiki:setup`. The
+plugin is now a single root skill with subcommands, as originally intended.
+
+### Changed
+
+- **The plugin command is `/llm-wiki <subcommand>`.** `/llm-wiki:wiki ingest` becomes
+  `/llm-wiki ingest`, and `/llm-wiki:setup` becomes `/llm-wiki setup`. This breaks the v1.6.0
+  command names; see Migration.
+- The skill moved from `skills/wiki/SKILL.md` to `SKILL.md` in the repository root. The plugin has
+  no `skills/` directory any more: with one, Claude Code would not load the root file as the
+  plugin's single skill (`plugin.md` REQ-860, REQ-862).
+- Setup is a subcommand of the skill instead of a skill of its own.
+- README, docs, specs and page templates write `/llm-wiki <command>`.
+- A skill copied by `setup.sh` is still `.claude/commands/wiki.md` and still invoked as `/wiki`, so
+  it never collides with the plugin. `setup.sh` now also writes the path of the repository clone
+  into the copy, which makes `/wiki setup` work there.
+- The pointer file `wiki.md` stays until v1.8.0 and points to `SKILL.md`.
+
+### Migration
+
+- From v1.6.0: update the plugin and type `/llm-wiki ...` instead of `/llm-wiki:wiki ...` and
+  `/llm-wiki setup` instead of `/llm-wiki:setup`. The Wiki root option and the wiki are unaffected.
+- Copied skills (`/wiki`) are unaffected.
+
 ## [1.6.0] - 2026-10-11
 
 llm-wiki is now a Claude Code plugin. Until now, installing meant cloning the repo and letting
