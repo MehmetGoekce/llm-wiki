@@ -39,7 +39,8 @@ that provides a structured knowledge management system for LLM assistants.
 ## Testing
 
 - No test framework (zero-dependency constraint)
-- Manual verification via setup.sh with test directories
+- Manual verification via `scripts/init-wiki.sh` and `setup.sh` with test directories
+- `claude plugin validate . --strict` before a release
 - BDD scenarios from specs serve as manual test scripts
 - Each scenario describes: precondition, action, expected result
 - Verify both tool modes for every change
@@ -48,8 +49,11 @@ that provides a structured knowledge management system for LLM assistants.
 
 | File | Purpose |
 |------|---------|
-| `wiki.md` | /wiki skill definition (the prompt Claude Code executes) |
-| `setup.sh` | Interactive installer |
+| `.claude-plugin/` | Plugin manifest (`plugin.json`) and marketplace (`marketplace.json`) |
+| `skills/wiki/SKILL.md` | /wiki skill definition (the prompt Claude Code executes) |
+| `skills/setup/SKILL.md` | Setup skill: collects answers, runs the init script |
+| `scripts/init-wiki.sh` | Non-interactive page and config creation |
+| `setup.sh` | Interactive installer for installs without the plugin; calls the init script |
 | `config.example.yml` | Configuration template |
 | `docs/` | Architecture docs, schema reference |
 | `templates/logseq/` | Logseq page templates (Schema, Hub, Dashboard) |

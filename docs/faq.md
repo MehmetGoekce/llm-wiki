@@ -39,7 +39,7 @@ See [docs/logseq-vs-obsidian.md](logseq-vs-obsidian.md) for the full comparison.
 
 Yes, but not with a single command yet. For now:
 
-1. Run `./setup.sh` to create the schema and namespace structure in a fresh wiki location.
+1. Run `/llm-wiki:setup` (or `./setup.sh`) to create the schema and namespace structure in a fresh wiki location.
 2. Use `/wiki ingest <path-to-existing-note>` to process notes one at a time. The LLM extracts entities, fits them into your schema, and creates cross-references.
 3. Iterate — Claude will ask clarifying questions for ambiguous content.
 
@@ -86,6 +86,18 @@ Three checks before your first push:
 3. **Review the first commit diff manually.** One-time sanity check that no API tokens or personal notes made it into tracked files.
 
 After the first push, the L1/L2 boundary enforces itself. The lint runs catch drift before it reaches GitHub.
+
+## Plugin or copied skill — which install should I use?
+
+The plugin. It installs once for all your projects, receives new releases through the marketplace, and knows your wiki location from its "Wiki root" option. Its commands are `/llm-wiki:setup` and `/llm-wiki:wiki <command>`.
+
+The copied skill (`./setup.sh`, then `/wiki <command>`) is for setups where plugins are not available. It lives in one project's `.claude/commands/` and stays at the version you copied.
+
+## Can I use more than one wiki on the same machine?
+
+The plugin holds one Wiki root per user. Claude Code stores plugin options in the user settings, not per project, so the plugin cannot point at a different wiki in each project.
+
+For a second wiki, run `./setup.sh` for it and let the script copy the skill into the project that should use it. That project then has `/wiki` for the second wiki and `/llm-wiki:wiki` for the first.
 
 ## Where do I report bugs or request features?
 

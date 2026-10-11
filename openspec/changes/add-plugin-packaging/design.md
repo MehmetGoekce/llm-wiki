@@ -88,7 +88,7 @@ contain a `CLAUDE.md` (the validator warns), which the repo does not have.
 
 | Option | For | Against |
 |--------|-----|---------|
-| **A. `userConfig.wiki_path`** | Claude Code prompts for it on enable and substitutes `${user_config.wiki_path}` into the skill body. Explicit, no guessing. | One value per settings scope (proposal open question 2). |
+| **A. `userConfig.wiki_path`** | Claude Code prompts for it on enable and substitutes `${user_config.wiki_path}` into the skill body. Explicit, no guessing. | One value per user: `pluginConfigs` is read from user or managed settings only. |
 | B. Search upward from the working directory for `llm-wiki.yml` | No configuration. | The wiki is usually not an ancestor of the project the user works in. |
 | C. Environment variable | Works for the copied-skill path too. | The user edits shell config by hand; exactly the step a plugin should remove. |
 | D. Duplicate all config keys in `userConfig` | Configurable from `/config`. | Two sources of truth; contradicts config.md REQ-600. |
@@ -150,6 +150,6 @@ entry carries no version; the manifest's value would override it anyway.
 | Risk | Mitigation |
 |------|------------|
 | A release without a `version` bump reaches no plugin user | Checklist step (D5); lint-style check in a later change. |
-| `directory`-typed option rejects a path that does not exist yet, blocking first-time setup | Verify in task 4.2. Fallback: type `string`, with the setup skill creating the directory. |
+| `directory`-typed option rejects a path that does not exist yet, blocking first-time setup | Tested on v2.1.296: `claude plugin configure --values-stdin` accepts a missing directory, and the init script creates it. The interactive dialog was not tested. Fallback if it rejects: type `string`. |
 | Users run both the plugin and an old copied `/wiki` and get two different versions | README migration note; `/llm-wiki:setup` warns when it finds `.claude/commands/wiki.md` in the current project. |
 | The plugin cache copy of the repo makes `${CLAUDE_PLUGIN_ROOT}` change on every update | Nothing is written there. State lives in the wiki directory only. |

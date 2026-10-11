@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-10-11
+
+llm-wiki is now a Claude Code plugin. Until now, installing meant cloning the repo and letting
+`setup.sh` copy `wiki.md` into one project: no update path, one copy per project, and a skill that
+did not know where the wiki was. The repository now doubles as its own plugin marketplace.
+
+### Added
+
+- **Plugin and marketplace manifests** (`.claude-plugin/`). Install with
+  `claude plugin marketplace add MehmetGoekce/llm-wiki` and
+  `claude plugin install llm-wiki@mehmetgoekce`.
+- **Wiki root option.** The plugin asks for the wiki directory once and hands it to the skill.
+  Everything else stays in `llm-wiki.yml`.
+- **`/llm-wiki:setup`**: creates the wiki skeleton from inside Claude Code.
+- **`scripts/init-wiki.sh`**: non-interactive page and config creation, used by both `setup.sh`
+  and the setup skill. Validates all input before writing; a second run skips everything.
+- Spec `openspec/specs/plugin.md` (REQ-830-880). `config.md` REQ-670-672 define how the wiki root
+  is resolved. Counts: 348 requirements, 104 scenarios.
+
+### Changed
+
+- `wiki.md` moved to `skills/wiki/SKILL.md`. A pointer file stays at the old path until v1.7.0.
+  With the plugin the command is `/llm-wiki:wiki <command>`; a copied skill stays `/wiki`.
+- `setup.sh` asks the same questions as before and delegates page creation to the init script.
+- The initial commit contains only the files setup created. Before, `git add -A` also committed
+  whatever else was uncommitted in an existing vault.
+- Entering `skip` at the memory path prompt now skips it; before, the word was written to
+  `memory_path`.
+- A missing `llm-wiki.yml` is reported with the wiki root and both ways to create it.
+
+### Fixed
+
+- The skill never received the wiki location. `setup.sh` replaced a `<CONFIG_PATH>` placeholder
+  that `wiki.md` did not contain, so the copied skill had to infer the wiki root from context.
+  A copied skill now carries the absolute path.
+- The Dashboard page was created with a literal `{{NAMESPACES}}` line: the template used a
+  placeholder the renderer did not fill. New wikis get the namespace links.
+
+### Migration
+
+- Existing wikis need no change. To move from a copied skill to the plugin: install it, enter the
+  existing wiki directory as Wiki root, delete `.claude/commands/wiki.md` from the project.
+- An existing Dashboard with a `{{NAMESPACES}}` line: replace the line by hand with one
+  `[[Wiki/<Namespace>]]` link per namespace.
+- Several wikis on one machine: the plugin holds one Wiki root per user. See the FAQ.
+
+### Not included
+
+- A SessionStart hook for due L1 claims, a deterministic lint script, and the listing in
+  Anthropic's plugin directory. Separate changes.
+
 ## [1.5.1] - 2026-10-05
 
 ### Fixed

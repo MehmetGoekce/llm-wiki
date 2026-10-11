@@ -20,6 +20,19 @@ creation and config writing move to `scripts/init-wiki.sh` (plugin.md REQ-870-87
 - REQ-803 (was: patch the `<CONFIG_PATH>` placeholder):
   The system SHALL replace every occurrence of the literal string `${user_config.wiki_path}` in the
   copied file with the absolute wiki path.
+- REQ-742 (was: namespace names are not validated):
+  Names MUST start with a letter and contain only letters, numbers and hyphens; otherwise error
+  and exit before creating pages. This is what `setup.sh` already did.
+- REQ-751: entering "skip" at the memory prompt counts as skipping. Before, the literal word was
+  written to `memory_path`.
+- REQ-782: the Access-Log page is listed (it was created since v1.2.0 but missing from the spec).
+- REQ-804 (was: platform-aware `sed`):
+  The replacement MUST behave identically on macOS and Linux and be safe for paths containing
+  characters special to `sed`. Implemented with python3.
+- REQ-810 (was: commit all created files, implemented as `git add -A`):
+  The initial commit SHALL contain only the files this run created and MUST NOT stage other
+  changes present in the wiki directory.
+- REQ-812 (was: git errors suppressed): a failed commit prints a warning and does not abort.
 - REQ-821 (was: next steps include open wiki, first ingest, status):
   The next steps SHALL additionally name the plugin install as the way to receive updates.
 

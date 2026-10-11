@@ -17,7 +17,17 @@ All downstream behavior depends on this file being valid.
 - REQ-601: Every /wiki command (ingest, query, lint, status) MUST read the config
   file as its first operation, before any wiki page operations.
 - REQ-602: If the config file does not exist, the system SHALL display an error:
-  "llm-wiki.yml not found. Run setup.sh to create one." and abort.
+  "llm-wiki.yml not found in {wiki root}. Run /llm-wiki:setup (plugin) or setup.sh
+  to create one." and abort.
+- REQ-670: The wiki root is resolved in this order: (1) the plugin's `wiki_path` user
+  configuration, substituted into the skill as `${user_config.wiki_path}`; (2) for a
+  copied skill, the absolute path written by `setup.sh` (specs/setup.md REQ-803).
+- REQ-671: If the wiki root in the skill text is still the unsubstituted placeholder,
+  the system SHALL abort with: "Wiki root is not configured. Set it in the llm-wiki
+  plugin settings, or re-run setup.sh for a copied skill." It MUST NOT guess a wiki root.
+- REQ-672: If `wiki_path` inside `llm-wiki.yml` names a different directory than the
+  root the file was loaded from, the system SHALL warn once, naming both paths, and
+  continue with the directory the file was loaded from.
 
 ### Required Keys
 
@@ -120,7 +130,8 @@ AND resolve pages path to /home/user/Documents/ObsidianVault/
 ```
 GIVEN no llm-wiki.yml file exists in the wiki root
 WHEN the user runs /wiki ingest "some source"
-THEN the system SHALL display: "llm-wiki.yml not found. Run setup.sh to create one."
+THEN the system SHALL display: "llm-wiki.yml not found in {wiki root}. Run
+    /llm-wiki:setup (plugin) or setup.sh to create one."
 AND abort without modifying any files
 ```
 
@@ -182,12 +193,33 @@ THEN wiki_path SHALL resolve to /home/user/Documents/MyWiki
 AND memory_path SHALL resolve to /home/user/.claude/projects/x/memory/
 ```
 
+### Scenario 10: Wiki directory was moved
+
+```
+GIVEN the plugin's wiki_path is ~/notes/wiki
+AND ~/notes/wiki/llm-wiki.yml contains wiki_path: ~/Documents/OldWiki
+WHEN the user runs /wiki status
+THEN the system SHALL warn that the two paths differ
+AND report on ~/notes/wiki
+```
+
+### Scenario 11: Copied skill without substitution
+
+```
+GIVEN skills/wiki/SKILL.md was copied by hand to .claude/commands/wiki.md
+AND no plugin is installed
+WHEN the user runs /wiki lint
+THEN the system SHALL abort with the REQ-671 message
+AND SHALL NOT read or write any wiki page
+```
+
 ---
 
 ## Acceptance Criteria
 
 - [ ] Config read as first operation of every /wiki command
-- [ ] Missing config file produces clear error with setup.sh hint
+- [ ] Missing config file produces clear error naming the wiki root and both setup paths
+- [ ] Wiki root comes from the plugin option or the path written by setup.sh, never guessed
 - [ ] tool value strictly validated (logseq or obsidian only)
 - [ ] wiki_path validated (must exist on disk)
 - [ ] namespaces validated (must be non-empty)
@@ -201,5 +233,6 @@ AND memory_path SHALL resolve to /home/user/.claude/projects/x/memory/
 
 ## Dependencies
 
-- setup.sh creates this config file (see specs/setup.md)
+- `scripts/init-wiki.sh` creates this config file, called by setup.sh or the setup skill
+  (see specs/setup.md, specs/plugin.md)
 - All other specs (ingest, query, lint) depend on config being loaded first

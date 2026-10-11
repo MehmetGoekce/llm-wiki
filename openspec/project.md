@@ -9,7 +9,7 @@ inspired by CPU memory hierarchies.
 - **Owner:** Mehmet Goekce / MEMOTECH
 - **License:** MIT (open-source)
 - **Repository:** github.com/MehmetGoekce/llm-wiki
-- **Status:** Initial release (v1.0), actively developed
+- **Status:** Released (v1.6), actively developed
 
 ## Architecture
 
@@ -21,6 +21,8 @@ inspired by CPU memory hierarchies.
 ## Tech Stack
 
 - **Runtime:** Claude Code (CLI)
+- **Distribution:** Claude Code plugin from this repository (which is also the marketplace);
+  `setup.sh` for installs without the plugin
 - **Dependencies:** bash, python3, git (no npm, no pip)
 - **Wiki tools:** Logseq (outliner) or Obsidian (flat markdown)
 - **Config:** `llm-wiki.yml` (YAML)
@@ -53,7 +55,8 @@ inspired by CPU memory hierarchies.
 | specs/lint.md | /wiki lint — 13 automated health checks with auto-fix | 58 | 16 |
 | specs/prune.md | /wiki prune — L2 index eviction, `--l1` verification | 39 | 15 |
 | specs/schema.md | Page types, properties, validation, format rules | 49 | 10 |
-| specs/config.md | llm-wiki.yml loading, validation, error handling | 20 | 9 |
-| specs/setup.md | setup.sh interactive installer (11 steps) | 47 | 10 |
+| specs/config.md | Wiki root resolution, llm-wiki.yml loading, validation, error handling | 23 | 11 |
+| specs/setup.md | setup.sh interactive installer, page and config creation | 49 | 11 |
+| specs/plugin.md | Plugin manifest, marketplace, wiki and setup skills, init script | 28 | 6 |
 | specs/l1-l2-routing.md | L1/L2 boundary decision logic, L1 staleness | 40 | 11 |
-| **Total** | **Complete system coverage** | **315** | **95** |
+| **Total** | **Complete system coverage** | **348** | **104** |

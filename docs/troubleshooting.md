@@ -92,19 +92,34 @@ If you mix conventions (e.g., triple-underscore files inside an Obsidian vault),
 
 ### `/wiki` commands aren't available in Claude Code
 
-**Cause:** The skill was not installed into your project. `setup.sh` offers to copy it but it is optional.
+**Cause:** Neither the plugin nor a copied skill is installed.
+
+**Fix (plugin):**
+
+1. Run `claude plugin list` and check that `llm-wiki@mehmetgoekce` is listed as enabled. If not, install it as described in the README.
+2. The plugin's commands carry a prefix: `/llm-wiki:wiki ingest ...`, not `/wiki ingest ...`.
+
+**Fix (copied skill):**
+
+1. Confirm `.claude/commands/wiki.md` exists in your project directory.
+2. If missing, re-run `./setup.sh` and enter the project path at the "Install /wiki skill" step.
+
+Restart Claude Code for the skill to be picked up.
+
+### "Wiki root is not configured"
+
+**Cause:** The skill does not know where your wiki is. With the plugin, the "Wiki root" option is unset. With a copied skill, the file was copied by hand, so the path was never written in.
 
 **Fix:**
 
-1. Confirm `.claude/commands/wiki.md` exists in your project directory.
-2. If missing, re-run `./setup.sh` and answer `y` at the "Install wiki skill in a project?" step, then provide the project path.
-3. Alternatively, copy manually:
-   ```bash
-   cp wiki.md ~/your-project/.claude/commands/wiki.md
-   ```
-4. In `wiki.md`, verify the `<CONFIG_PATH>` placeholder has been replaced with the absolute path to your `llm-wiki.yml`.
+- **Plugin:** run `/plugin configure llm-wiki@mehmetgoekce` in Claude Code and enter your wiki directory, then restart Claude Code.
+- **Copied skill:** re-run `./setup.sh` and let it copy the skill, or open `.claude/commands/wiki.md` and replace `${user_config.wiki_path}` with the absolute path of your wiki directory.
 
-Restart Claude Code for the skill to be picked up.
+### "llm-wiki.yml not found in ..."
+
+**Cause:** The wiki root is set, but no wiki has been created there yet, or the wiki was moved.
+
+**Fix:** Run `/llm-wiki:setup` (plugin) or `./setup.sh` to create it. If you moved the wiki, point the plugin's "Wiki root" option at the new location.
 
 ### `/wiki ingest` runs forever or times out
 

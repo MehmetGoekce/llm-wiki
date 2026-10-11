@@ -74,10 +74,11 @@ wiki root explicitly.
   and cannot be renamed without breaking existing installs. It matches the GitHub owner and leaves
   room for further plugins.
 
+- **Several wikis on one machine** (resolved during implementation). Claude Code reads
+  `pluginConfigs` from user or managed settings only, so the plugin holds one Wiki root per user.
+  A second wiki uses a copied skill in its project. Documented in `docs/faq.md`.
+
 ## Open questions for the maintainer
 
-1. **Minimum Claude Code version.** The manifest passes `claude plugin validate --strict` on
-   v2.1.296. The lowest version that supports a `directory`-typed `userConfig` option has not been
-   determined; README should state the version the release was tested on.
-2. **Several wikis on one machine.** `userConfig` holds one `wiki_path`. Whether a project-level
-   settings file can override it per project needs a test before the README promises it.
+1. **Minimum Claude Code version.** Tested on v2.1.296, which the README states. The lowest
+   version that supports a `directory`-typed `userConfig` option has not been determined.
