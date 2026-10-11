@@ -355,6 +355,7 @@ No system is perfect. Some things to know:
 llm-wiki has no backend and collects nothing. It is a skill and a few shell scripts that run inside your own Claude Code session.
 
 - Wiki pages, the access log and `llm-wiki.yml` are written to your local Logseq graph or Obsidian vault and stay there. Whatever you ingest ends up in those files, including names or contact details if the source contains them.
+- If you set `memory_path`, the skill also reads your local Claude Code memory directory: `query` may consult it, `lint` reports rules that are due for a check, and `prune --l1` classifies, updates, moves or deletes memory files, each one only after you confirm it. `lint` never prints the content of a memory file. Without `memory_path` the skill does not touch that directory.
 - The skill and the scripts send nothing to the author or to any third party. There is no telemetry.
 - The only network access is the page fetch that `ingest` makes when you pass a URL as the source.
 - Commits are local. Nothing is pushed unless you push your wiki yourself.
