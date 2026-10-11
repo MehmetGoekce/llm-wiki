@@ -1,10 +1,10 @@
 ---
-name: wiki
-description: Maintain a persistent LLM wiki in Logseq or Obsidian. Subcommands - ingest a source into wiki pages, query the wiki, prune cold pages or stale L1 rules, lint, status, import existing notes.
-argument-hint: "<ingest|query|prune|lint|status|import> [args]"
+name: llm-wiki
+description: Maintain a persistent LLM wiki in Logseq or Obsidian. Subcommands - setup (one-time, creates the wiki), ingest a source into wiki pages, query the wiki, prune cold pages or stale L1 rules, lint, status, import existing notes.
+argument-hint: "<setup|ingest|query|prune|lint|status|import> [args]"
 ---
 
-# /wiki - LLM Wiki
+# /llm-wiki - LLM Wiki
 
 Persistent knowledge management powered by Claude Code. Maintains a structured wiki in Logseq or Obsidian using the L1/L2 cache architecture.
 
@@ -32,14 +32,15 @@ Persistent knowledge management powered by Claude Code. Maintains a structured w
 ## Arguments
 
 ```
-/wiki ingest <source>        Process source, create/update wiki pages
-/wiki query <question>       Search wiki (two-stage via hub index), synthesize answer
-/wiki prune [--months N]     LRU-Demote: evict cold pages from the live index (default 6 months)
-/wiki prune --l1 [--batch N] [--days N]
+/llm-wiki ingest <source>        Process source, create/update wiki pages
+/llm-wiki query <question>       Search wiki (two-stage via hub index), synthesize answer
+/llm-wiki prune [--months N]     LRU-Demote: evict cold pages from the live index (default 6 months)
+/llm-wiki prune --l1 [--batch N] [--days N]
                              L1-Verification: classify L1 rules, check due claims, re-verify/demote/delete
-/wiki lint [--fix]           Health check: orphans, stale, broken refs, index drift
-/wiki status                 Wiki metrics and health overview (incl. hot/cold profile)
-/wiki import                 Import existing notes into wiki format
+/llm-wiki lint [--fix]           Health check: orphans, stale, broken refs, index drift
+/llm-wiki status                 Wiki metrics and health overview (incl. hot/cold profile)
+/llm-wiki import                 Import existing notes into wiki format
+/llm-wiki setup                  One-time: create the wiki skeleton and llm-wiki.yml in the wiki root
 ```
 
 ## Workflow
@@ -58,8 +59,8 @@ copied skill. If it is not a filesystem path but an unexpanded placeholder (it s
 sign and a brace), stop and tell the user: "Wiki root is not configured. Set it in the llm-wiki
 plugin settings, or re-run setup.sh for a copied skill." Never guess a wiki root.
 
-Read `llm-wiki.yml` from the wiki root FIRST. If the file is missing, stop with: "llm-wiki.yml not
-found in <wiki root>. Run /llm-wiki:setup (plugin) or setup.sh to create one." If its `wiki_path`
+Read `llm-wiki.yml` from the wiki root FIRST (every command except `setup`, which creates it). If the
+file is missing, stop with: "llm-wiki.yml not found in <wiki root>. Run /llm-wiki setup to create one." If its `wiki_path`
 names a different directory than the wiki root above, warn once, naming both paths, and continue
 with the wiki root above. The config determines:
 - `tool`: logseq or obsidian
@@ -95,7 +96,7 @@ with the wiki root above. The config determines:
 
 ## L1/L2 Boundary
 - L1 (Memory, auto-loaded): Rules, gotchas, identity, credentials — things Claude must know EVERY session
-- L2 (Wiki, on-demand): Projects, workflows, research — queried via /wiki when needed
+- L2 (Wiki, on-demand): Projects, workflows, research — queried via /llm-wiki when needed
 - Routing rule: "Would a mistake without this knowledge be dangerous/embarrassing? -> L1. Merely inconvenient? -> L2."
 - Credentials MUST stay in L1 (wiki is git-tracked!)
 </context>
@@ -165,7 +166,7 @@ Phase 1b - Access Logging (LRU signal + routing transparency):
   - **`matched:` reason = the "and why" of the routing** (loading transparency): on index routing
     (Phase 0) the hub `### Index` routing description / #tag that matched the question; on the L3 fallback
     the grep term that found the page. Keep it short (<= 60 chars), in quotes. The log then shows not just
-    WHICH page loaded but WHY it was picked for this question — surfaced via `/wiki status` cache profile.
+    WHICH page loaded but WHY it was picked for this question — surfaced via `/llm-wiki status` cache profile.
   - Append-only, NO per-query git commit (non-structural — see Constraints)
   - If the L3 fallback hits an archived page (`archived::` set) — a re-hit on an evicted page: offer to
     re-promote it — move its routing line back into the hub `### Index`, drop the archived:: property
@@ -311,7 +312,7 @@ Phase 2 - Check Rules (from Schema):
       `l1_verify_days` — report file name, verified date (or "never"), age in days
     - info: ONE line with the count of unclassified L1 files (no `asserts-current-behavior` key)
     - `asserts-current-behavior: false` is never flagged, regardless of age
-    - never print L1 file bodies (L1 may hold credentials); suggest `/wiki prune --l1`
+    - never print L1 file bodies (L1 may hold credentials); suggest `/llm-wiki prune --l1`
 
 Phase 3 - Report:
   - Group findings by severity (critical, warning, info)
@@ -369,6 +370,50 @@ Phase 3 - Activity:
 Phase 4 - Output:
   - Formatted dashboard with metrics
   - Comparison to last status run (if Dashboard page exists)
+
+## Workflow: setup
+
+One-time. Creates the wiki skeleton in the wiki root. Pages and the config file are created by a
+script; you collect the answers and run it. Do not create or edit wiki pages yourself.
+
+Phase 1 - Check:
+  - If `llm-wiki.yml` exists in the wiki root: report that the wiki is already set up, show its
+    `tool` and `namespaces`, and stop without changing anything. Only if the user then asks to add
+    missing pages, continue with the values from the existing config; the script skips every file
+    that already exists.
+
+Phase 2 - Ask the user, in one message:
+  - Tool: Logseq or Obsidian. If the wiki root contains a `logseq/` directory suggest Logseq, if it
+    contains `.obsidian/` suggest Obsidian.
+  - Namespaces: default `Business Tech Content Projects People Learning Reference`, or their own
+    list. Names start with a letter and contain only letters, numbers and hyphens.
+  - Claude Code memory directory for the L1 features (optional, usually
+    `~/.claude/projects/<project>/memory/`).
+  - If the wiki root is not a git repository: whether to initialize git there.
+
+Phase 3 - Run the script with the answers:
+
+  ```bash
+  bash "${CLAUDE_PLUGIN_ROOT}/scripts/init-wiki.sh" \
+    --tool <logseq|obsidian> \
+    --wiki-path "<wiki root>" \
+    --namespaces "<space-separated list>" \
+    --commit
+  ```
+
+  - Add `--memory-path "<dir>"` if the user gave one and `--git-init` if they agreed to it.
+    `--commit` commits only the files the script created, and only if the wiki root is a git
+    repository.
+  - If the script exits with an error, show its message and stop. Do not work around it by writing
+    files by hand.
+
+Phase 4 - Report:
+  - Files created and skipped (from the script output), the path of `llm-wiki.yml`
+  - Next steps: open the wiki in the chosen tool, try `/llm-wiki ingest "<a first source>"`, then
+    `/llm-wiki status`
+  - If the current project contains `.claude/commands/wiki.md`: tell the user that an older copied
+    `/wiki` skill is installed as well and that deleting that file avoids running two versions.
+    Do not delete it yourself.
 
 ## Workflow: import
 
