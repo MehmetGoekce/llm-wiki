@@ -50,7 +50,7 @@ Everyone loved the concept. Almost nobody built one. The gist describes *what* t
 
 ## Why use this?
 
-- **5-minute setup.** `./setup.sh` creates your schema, namespaces, and git tracking. No manual design needed.
+- **5-minute setup.** Install the plugin, run `/llm-wiki:setup`, and you have a schema, namespaces, and git tracking. No manual design needed.
 - **Claude becomes your wiki maintainer.** `/wiki ingest` updates 5-15 pages with cross-references from a single source.
 - **L1/L2 architecture.** Auto-loaded rules in memory (L1) + deep knowledge in the wiki (L2). No other tool has this.
 - **Built-in quality checks.** `/wiki lint` finds orphan pages, stale content, broken refs, and credential leaks.
@@ -58,27 +58,52 @@ Everyone loved the concept. Almost nobody built one. The gist describes *what* t
 
 ## Quick Start
 
+### As a Claude Code plugin (recommended)
+
+```bash
+claude plugin marketplace add MehmetGoekce/llm-wiki
+claude plugin install llm-wiki@mehmetgoekce
+```
+
+On Claude Code 2.1.275 or later, one line inside a session does the same:
+
+```
+/plugin install llm-wiki --marketplace MehmetGoekce/llm-wiki
+```
+
+Claude Code asks for one value, the **Wiki root**: your Logseq graph or Obsidian vault. The directory
+may be empty or not exist yet. Then, in any project:
+
+```
+/llm-wiki:setup
+/llm-wiki:wiki ingest "your first source"
+/llm-wiki:wiki query "what do I know about X?"
+/llm-wiki:wiki lint
+```
+
+`/llm-wiki:setup` asks which tool you use and which namespaces you want, then creates the Schema,
+Dashboard, hub pages, Access-Log and `llm-wiki.yml`. The wiki starts sparse and gets denser with
+every ingest. New releases reach you through the plugin; nothing to copy.
+
+Tested with Claude Code 2.1.296.
+
+### Without the plugin
+
 ```bash
 git clone https://github.com/MehmetGoekce/llm-wiki.git
 cd llm-wiki
 ./setup.sh
 ```
 
-`setup.sh` does three things:
+`setup.sh` asks the same questions in the terminal, creates the same pages, and can copy the skill
+into one project's `.claude/commands/`. That copy is invoked as `/wiki` and does not update itself.
 
-- Copies the `/wiki` skill and schema template into your Claude Code project
-- Detects your wiki app (Logseq or Obsidian) and configures paths accordingly
-- Creates the initial namespace structure with hub pages
+The rest of this README writes `/wiki <command>`. With the plugin, type `/llm-wiki:wiki <command>`.
 
-Then in Claude Code:
+### Moving from a copied skill to the plugin
 
-```
-/wiki ingest "your first source"
-/wiki query "what do I know about X?"
-/wiki lint
-```
-
-That is it. The wiki starts sparse and gets denser with every ingest.
+Install the plugin, enter your existing wiki directory as Wiki root, and delete the copied
+`.claude/commands/wiki.md` from your project. The wiki itself needs no change.
 
 ## The L1/L2 Architecture
 
@@ -260,7 +285,7 @@ Every number has a date. Decisions have rationale. Open questions are explicit. 
 
 ## Configuration
 
-`setup.sh` creates `llm-wiki.yml` in your wiki root. You can also create it manually:
+Setup creates `llm-wiki.yml` in your wiki root. You can also create it manually:
 
 ```yaml
 # llm-wiki.yml
@@ -313,7 +338,7 @@ No system is perfect. Some things to know:
 
 ## Documentation
 
-- [FAQ](docs/faq.md) — Common questions before you run `setup.sh`
+- [FAQ](docs/faq.md) — Common questions before you install
 - [Troubleshooting](docs/troubleshooting.md) — Setup, integration, and runtime issues
 - [L1/L2 Architecture](docs/l1-l2-architecture.md) — Why two layers, how to route knowledge
 - [Schema Reference](docs/schema-reference.md) — Page types, properties, lint rules

@@ -23,7 +23,7 @@ labels: bug
 - **Tool:** Logseq / Obsidian (delete one)
 - **OS:** macOS / Linux / WSL (delete one)
 - **Python version:** (`python3 --version`)
-- **How installed:** setup.sh / manual
+- **How installed:** plugin / setup.sh / manual
 
 ## Relevant config
 

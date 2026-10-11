@@ -1,0 +1,19 @@
+{
+  "name": "llm-wiki",
+  "displayName": "LLM Wiki",
+  "version": "1.6.0",
+  "description": "Persistent L1/L2 knowledge base in Logseq or Obsidian: ingest, query, prune, lint, status",
+  "author": { "name": "Mehmet Goekce", "url": "https://github.com/MehmetGoekce" },
+  "homepage": "https://github.com/MehmetGoekce/llm-wiki",
+  "repository": "https://github.com/MehmetGoekce/llm-wiki",
+  "license": "MIT",
+  "keywords": ["knowledge-base", "wiki", "logseq", "obsidian", "memory"],
+  "userConfig": {
+    "wiki_path": {
+      "type": "directory",
+      "title": "Wiki root",
+      "description": "Logseq graph or Obsidian vault that holds (or will hold) llm-wiki.yml",
+      "required": true
+    }
+  }
+}
