@@ -1,7 +1,7 @@
 {
   "name": "llm-wiki",
   "displayName": "LLM Wiki",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Persistent L1/L2 knowledge base in Logseq or Obsidian: ingest, query, prune, lint, status",
   "author": { "name": "Mehmet Goekce", "url": "https://github.com/MehmetGoekce" },
   "homepage": "https://github.com/MehmetGoekce/llm-wiki",
