@@ -14,6 +14,6 @@
 
 - [ ] Tested with **Logseq** mode (`tool: logseq`)
 - [ ] Tested with **Obsidian** mode (`tool: obsidian`)
-- [ ] No external dependencies added (bash, python3, git only)
+- [ ] No dependencies added and no executable files (git is the only optional tool)
 - [ ] Commit messages follow format: `type: short description`
 - [ ] Updated relevant docs (if behavior changed)

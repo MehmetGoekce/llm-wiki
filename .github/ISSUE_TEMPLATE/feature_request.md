@@ -18,7 +18,7 @@ labels: enhancement
 - [ ] `/wiki query`
 - [ ] `/wiki lint`
 - [ ] `/wiki status`
-- [ ] `setup.sh`
+- [ ] `setup`
 - [ ] Templates (Logseq/Obsidian)
 - [ ] Schema / page types
 - [ ] L1/L2 architecture

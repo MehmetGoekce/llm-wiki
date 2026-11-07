@@ -21,7 +21,7 @@ Security issues in llm-wiki typically involve:
 
 - **Credential leaks:** Wiki pages accidentally containing API tokens, passwords,
   or secrets (the wiki is git-tracked and credentials must stay in L1 memory)
-- **Setup script:** Path injection or file overwrite vulnerabilities in `setup.sh`
+- **Setup:** Path handling or file overwrite issues in the `setup` subcommand of `SKILL.md`
 - **Template injection:** Malicious content in wiki pages affecting template rendering
 
 ## Design Principles

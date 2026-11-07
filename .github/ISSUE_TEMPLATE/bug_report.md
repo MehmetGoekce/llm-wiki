@@ -22,8 +22,8 @@ labels: bug
 
 - **Tool:** Logseq / Obsidian (delete one)
 - **OS:** macOS / Linux / WSL (delete one)
-- **Python version:** (`python3 --version`)
-- **How installed:** plugin / setup.sh / manual
+- **Claude Code version:** (`claude --version`)
+- **How installed:** plugin / copied skill
 
 ## Relevant config
 

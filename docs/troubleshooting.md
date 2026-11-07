@@ -4,56 +4,32 @@ Common issues and fixes. If your problem is not listed here, open a [GitHub issu
 
 ## Setup
 
-### `setup.sh: python3: command not found`
+### "This is a copied skill and the clone path is not filled in"
 
-**Cause:** Python 3 is not installed or not in your `PATH`. The setup script uses Python 3 to render page templates.
+**Cause:** `/wiki setup` in a copied skill reads the page templates from the llm-wiki clone, and the copy still contains the placeholder `${CLAUDE_PLUGIN_ROOT}` instead of the clone's path.
 
-**Fix:**
+**Fix:** Replace `${CLAUDE_PLUGIN_ROOT}` in `.claude/commands/wiki.md` with the absolute path of your clone (README, "Without the plugin"), then run `/wiki setup` again. If the clone was moved or deleted, clone it again and use the new path.
 
-- **macOS:** `brew install python3`
-- **Ubuntu/Debian:** `sudo apt install python3`
-- **Fedora:** `sudo dnf install python3`
-- **Windows:** Install from [python.org](https://www.python.org/downloads/) and check "Add python.exe to PATH" during install.
+### Setup stops with a template path
 
-Verify with `python3 --version`. The script requires Python 3.6 or newer (any version from the last ~8 years works).
-
-### `setup.sh: git: command not found`
-
-**Cause:** Git is not installed. Needed for the optional `git init` step and to clone the repo in the first place.
+**Cause:** A template under `templates/logseq/` or `templates/obsidian/` could not be read. With the plugin this points to a broken plugin cache; with a copied skill, to a wrong clone path or an incomplete clone.
 
 **Fix:**
 
-- **macOS:** Comes with Xcode Command Line Tools — run `xcode-select --install`.
-- **Ubuntu/Debian:** `sudo apt install git`
-- **Fedora:** `sudo dnf install git`
-- **Windows:** Install [Git for Windows](https://git-scm.com/download/win).
+- **Plugin:** `claude plugin update llm-wiki@mehmetgoekce`, or uninstall and install it again.
+- **Copied skill:** check the path in the error message, and clone the repository again if `templates/` is empty or partial.
 
-### `setup.sh` fails during template rendering
+### Setup says git steps are skipped
 
-**Cause:** Usually one of three things:
+**Cause:** Git is not installed. It is needed only to initialize the wiki repository and make the first commit; the pages and `llm-wiki.yml` are created anyway.
 
-1. The destination directory is not writable.
-2. The template directory is missing (corrupted clone or wrong working directory).
-3. A pre-existing file blocks template output.
+**Fix:** Install git (macOS: `xcode-select --install`, Ubuntu/Debian: `sudo apt install git`, Fedora: `sudo dnf install git`, Windows: [Git for Windows](https://git-scm.com/download/win)), then run `git init` in the wiki root and commit the created files yourself.
 
-**Fix:**
+### Some pages were reported as "Skipped (already exists)"
 
-- Confirm you ran `./setup.sh` from inside the cloned `llm-wiki` directory, not from elsewhere.
-- Check the path you entered is writable: `touch ~/Documents/Logseq/test.txt && rm ~/Documents/Logseq/test.txt`.
-- If pre-existing pages block the render, setup will skip them. Delete the skipped pages manually if you want them regenerated.
-- Re-clone the repo if `templates/` looks empty or partial.
+**Cause:** Setup never overwrites a file. Pages from an earlier run, or your own pages with the same name, are left as they are.
 
-### The script exits at "Which note-taking tool do you use?"
-
-**Cause:** Something other than `1` or `2` was entered. The script exits immediately on invalid input rather than re-prompting.
-
-**Fix:** Re-run `./setup.sh` and enter exactly `1` (Logseq) or `2` (Obsidian). If you prefer non-interactive runs (e.g., CI or testing):
-
-```bash
-echo -e "1\n~/test-wiki\ny\n\nskip\ny\nskip" | ./setup.sh
-```
-
-See `CONTRIBUTING.md` for the full stdin sequence.
+**Fix:** Nothing to fix if the existing pages are what you want. To regenerate one from its template, delete it and run setup again.
 
 ## Wiki App Integration
 
@@ -86,7 +62,7 @@ See `CONTRIBUTING.md` for the full stdin sequence.
 - **Logseq** expects triple-underscore flat files: `Wiki___Tech___Strapi.md`. `[[Wiki/Tech/Strapi]]` resolves because Logseq treats `/` and `___` as equivalent path separators.
 - **Obsidian** expects directory hierarchy: `Wiki/Tech/Strapi.md`. The file literally lives inside `Wiki/Tech/`.
 
-If you mix conventions (e.g., triple-underscore files inside an Obsidian vault), links break. Check that `setup.sh` configured the correct tool — run it again and pick the tool matching your current vault.
+If you mix conventions (e.g., triple-underscore files inside an Obsidian vault), links break. Check that `tool` in `llm-wiki.yml` matches your app. If it does not, correct the value; pages already created in the wrong format have to be renamed or moved by hand.
 
 ## Claude Code Integration
 
@@ -102,24 +78,24 @@ If you mix conventions (e.g., triple-underscore files inside an Obsidian vault),
 **Fix (copied skill):**
 
 1. Confirm `.claude/commands/wiki.md` exists in your project directory.
-2. If missing, re-run `./setup.sh` and enter the project path at the "Copy the skill into a Claude Code project?" step. The copy is invoked as `/wiki`.
+2. If missing, copy it again as described in the README ("Without the plugin"). The copy is invoked as `/wiki`.
 
 Restart Claude Code for the skill to be picked up.
 
 ### "Wiki root is not configured"
 
-**Cause:** The skill does not know where your wiki is. With the plugin, the "Wiki root" option is unset. With a copied skill, the file was copied by hand, so the path was never written in.
+**Cause:** The skill does not know where your wiki is. With the plugin, the "Wiki root" option is unset. With a copied skill, the placeholder was not replaced.
 
 **Fix:**
 
 - **Plugin:** run `/plugin configure llm-wiki@mehmetgoekce` in Claude Code and enter your wiki directory, then restart Claude Code.
-- **Copied skill:** re-run `./setup.sh` and let it copy the skill, or open `.claude/commands/wiki.md` and replace `${user_config.wiki_path}` with the absolute path of your wiki directory.
+- **Copied skill:** open `.claude/commands/wiki.md` and replace `${user_config.wiki_path}` with the absolute path of your wiki directory (README, "Without the plugin").
 
 ### "llm-wiki.yml not found in ..."
 
 **Cause:** The wiki root is set, but no wiki has been created there yet, or the wiki was moved.
 
-**Fix:** Run `/llm-wiki setup` (or `./setup.sh` in a clone of the repository) to create it. If you moved the wiki, point the plugin's "Wiki root" option at the new location.
+**Fix:** Run `/llm-wiki setup` (or `/wiki setup` with a copied skill) to create it. If you moved the wiki, point the plugin's "Wiki root" option at the new location.
 
 ### `/llm-wiki ingest` runs forever or times out
 
