@@ -58,6 +58,6 @@ inspired by CPU memory hierarchies.
 | specs/schema.md | Page types, properties, validation, format rules | 49 | 10 |
 | specs/config.md | Wiki root resolution, llm-wiki.yml loading, validation, error handling | 23 | 11 |
 | specs/setup.md | `setup` subcommand: questions, page and config creation, first commit | 44 | 11 |
-| specs/plugin.md | Plugin manifest, marketplace, root skill `/llm-wiki`, file policy | 23 | 5 |
+| specs/plugin.md | Plugin manifest, marketplace, root skill `/llm-wiki`, file policy | 24 | 5 |
 | specs/l1-l2-routing.md | L1/L2 boundary decision logic, L1 staleness | 40 | 11 |
-| **Total** | **Complete system coverage** | **338** | **103** |
+| **Total** | **Complete system coverage** | **339** | **103** |

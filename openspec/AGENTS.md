@@ -54,8 +54,7 @@ that provides a structured knowledge management system for LLM assistants.
 | `.claude-plugin/` | Plugin manifest (`plugin.json`) and marketplace (`marketplace.json`) |
 | `SKILL.md` | /llm-wiki skill definition (the prompt Claude Code executes), including the `setup` subcommand. Root skill of the plugin: no `skills/` directory |
 | `config.example.yml` | Configuration template |
-| `docs/` | Architecture docs, schema reference |
+| `docs/` | Architecture docs, schema reference, Mermaid diagrams (`docs/diagrams.md`) |
 | `templates/logseq/` | Logseq page templates (Schema, Hub, Dashboard) |
 | `templates/obsidian/` | Obsidian page templates |
 | `examples/` | Before/after examples, L1 memory samples |
-| `diagrams/` | Mermaid architecture diagrams |

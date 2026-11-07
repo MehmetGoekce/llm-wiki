@@ -7,6 +7,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-11-07
+
+The plugin directory refused v1.8.0 as well: it judges a file's type by its extension, and the
+three Mermaid diagrams ended in `.mmd`.
+
+### Changed
+
+- The architecture diagrams moved from `diagrams/*.mmd` into fenced Mermaid blocks in
+  `docs/diagrams.md`, where GitHub renders them. No change to the plugin's behavior.
+
+### Removed
+
+- The `diagrams/` directory.
+
 ## [1.8.0] - 2026-11-07
 
 No scripts. Anthropic's plugin directory accepts executable files only from Verified
