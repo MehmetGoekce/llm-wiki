@@ -48,8 +48,8 @@ check in the setup subcommand stops it when the templates cannot be read (setup.
 
 The specs keep the output contract (file names, contents, config format, commit message) and
 state it without the script. For verification, the script is not needed in the working tree: the
-parity test runs it from `git show v1.7.1:scripts/init-wiki.sh` into a temporary directory. After
-the release the specs alone define the output.
+parity test runs it from a checkout of tag v1.7.1 (`git worktree add`), which holds the matching
+templates. After the release the specs alone define the output.
 
 ## D4: Validation happens in the conversation, before the first write
 
@@ -64,8 +64,9 @@ is not a guarantee the skill can rely on. Before writing, the subcommand lists w
 (one `test -e` per path, or one `ls` of the target directories) and skips them, as the script did.
 It reports each file as created or skipped (setup.md REQ-786, REQ-787).
 
-## D6: Manifest fields
+## D6: Manifest fields stay
 
-The fields the directory reported as unrecognized are removed, not renamed, unless the plugin
-reference names a valid field for the same purpose. The README keeps the privacy and support
-sections; only the manifest pointers go. `claude plugin validate . --strict` must still pass.
+`documentationUrl`, `supportUrl` and `privacyPolicyUrl` are documented directory listing fields
+(plugins reference, "Directory listing fields"), and `claude plugin validate . --strict` passes on
+v2.1.319. The October warnings came from an earlier validator. If the portal reports them again
+for v1.8.0, they are removed in a patch release.

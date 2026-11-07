@@ -1,9 +1,9 @@
 # Change: Remove the shell scripts from the plugin
 
 - **Change ID:** `remove-shell-scripts`
-- **Status:** Proposed (2026-11-07)
+- **Status:** Implemented (2026-11-07), release pending
 - **Release:** v1.8.0 (minor: the setup subcommand creates the same wiki by a different route;
-  `setup.sh` is removed). See Open questions 1.
+  `setup.sh` is removed). Decided by the maintainer on 2026-11-07.
 - **Affected specs:** `specs/plugin.md` (Skill, Init script), `specs/setup.md` (rewritten for the
   setup subcommand), `specs/config.md` (REQ-670, REQ-671)
 
@@ -27,8 +27,10 @@ because they start with `#!`:
 Every other tracked file is Markdown, JSON, YAML, PNG, `LICENSE`, `.gitignore` or plain-text
 Mermaid (`diagrams/*.mmd`), all UTF-8 without NUL bytes.
 
-The same check reported "Unrecognized field in plugin.json" three times. The fields are listing
-metadata added after v1.7.1 was tagged (`[Unreleased]` in the CHANGELOG).
+In October the portal also reported "Unrecognized field in plugin.json" three times. The current
+plugins reference lists `documentationUrl`, `supportUrl` and `privacyPolicyUrl` as directory
+listing fields that the directory reads from `plugin.json`, and `claude plugin validate --strict`
+(v2.1.319) reports nothing. The fields stay.
 
 ## What changes
 
@@ -40,9 +42,6 @@ metadata added after v1.7.1 was tagged (`[Unreleased]` in the CHANGELOG).
   (design.md D2).
 - **Install without the plugin** becomes a documented manual step in the README: copy `SKILL.md` to
   `<project>/.claude/commands/wiki.md`, replace the two placeholders, run `/wiki setup`.
-- **Manifest cleanup:** the fields the directory does not recognize are removed from
-  `.claude-plugin/plugin.json`, and the `[Unreleased]` line that says they are "shown on the
-  directory listing" is corrected.
 - Specs, README, CONTRIBUTING, FAQ, troubleshooting, security policy and issue/PR templates stop
   referring to the scripts.
 
@@ -75,12 +74,9 @@ metadata added after v1.7.1 was tagged (`[Unreleased]` in the CHANGELOG).
 | Contributors | No script to test against; setup is verified with the parity test (tasks.md 3). The zero-dependency rule shrinks to: git optional, nothing else. |
 | Directory submission | The merge to `main` pushes a new commit, which the directory checks again. |
 
-## Open questions for the maintainer
+## Decided
 
-1. **Version number.** Removing `setup.sh` removes a documented install path. Strict SemVer reads
-   that as breaking (2.0.0). Proposed is 1.8.0: the plugin's interface (`/llm-wiki` subcommands,
-   `userConfig`, `llm-wiki.yml`, wiki format) is unchanged, and v1.7.0 already handled a removed
-   entry point as a minor release with a Migration section.
-2. **Which three fields are unrecognized.** Candidates: `documentationUrl`, `supportUrl`,
-   `privacyPolicyUrl`, `displayName`. The exact list is under "Other findings from the automatic
-   checks" in the portal's Review tab and is needed before tasks.md 4.1.
+- **Version 1.8.0** (2026-11-07). Removing `setup.sh` removes a documented install path; strict
+  SemVer would read that as 2.0.0. The plugin's interface (`/llm-wiki` subcommands, `userConfig`,
+  `llm-wiki.yml`, wiki format) is unchanged, and v1.7.0 handled a removed entry point the same way.
+- **Manifest fields stay** (2026-11-07). See Why.

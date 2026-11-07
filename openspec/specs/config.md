@@ -21,10 +21,12 @@ All downstream behavior depends on this file being valid.
   abort. The `setup` subcommand is exempt: it creates the file.
 - REQ-670: The wiki root is resolved in this order: (1) the plugin's `wiki_path` user
   configuration, substituted into the skill as `${user_config.wiki_path}`; (2) for a
-  copied skill, the absolute path written by `setup.sh` (specs/setup.md REQ-803).
+  copied skill, the absolute path the user wrote in place of the placeholder (specs/setup.md
+  REQ-807).
 - REQ-671: If the wiki root in the skill text is still the unsubstituted placeholder,
   the system SHALL abort with: "Wiki root is not configured. Set it in the llm-wiki
-  plugin settings, or re-run setup.sh for a copied skill." It MUST NOT guess a wiki root.
+  plugin settings, or replace the placeholder in a copied skill (see README)." It MUST NOT guess
+  a wiki root.
 - REQ-672: If `wiki_path` inside `llm-wiki.yml` names a different directory than the
   root the file was loaded from, the system SHALL warn once, naming both paths, and
   continue with the directory the file was loaded from.
@@ -219,7 +221,7 @@ AND SHALL NOT read or write any wiki page
 
 - [ ] Config read as first operation of every /llm-wiki command
 - [ ] Missing config file produces clear error naming the wiki root and both setup paths
-- [ ] Wiki root comes from the plugin option or the path written by setup.sh, never guessed
+- [ ] Wiki root comes from the plugin option or the path written into a copied skill, never guessed
 - [ ] tool value strictly validated (logseq or obsidian only)
 - [ ] wiki_path validated (must exist on disk)
 - [ ] namespaces validated (must be non-empty)
@@ -233,6 +235,6 @@ AND SHALL NOT read or write any wiki page
 
 ## Dependencies
 
-- `scripts/init-wiki.sh` creates this config file, called by setup.sh or `/llm-wiki setup`
+- The `setup` subcommand creates this config file (specs/setup.md REQ-790-792)
   (see specs/setup.md, specs/plugin.md)
 - All other specs (ingest, query, lint) depend on config being loaded first

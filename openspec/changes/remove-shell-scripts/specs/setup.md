@@ -128,8 +128,9 @@ bundled templates and writes the files itself. No script is involved.
 
 - REQ-790 (MODIFIED): Setup SHALL create `llm-wiki.yml` in the wiki root as the last file. An
   existing `llm-wiki.yml` is never replaced (plugin.md REQ-865 handles a configured wiki).
-- REQ-791 (MODIFIED): The config SHALL have exactly this form, with a trailing newline and
-  `key: ` followed by an empty value where a value is empty:
+- REQ-791 (MODIFIED): The config SHALL have exactly this form, with a trailing newline. An empty
+  value is written as the key and colon with nothing after it (`pages_dir:`). v1.7.1 wrote a
+  trailing space there; both parse as an empty value.
 
   ```
   # llm-wiki configuration
@@ -292,10 +293,11 @@ AND nothing SHALL be written
 
 ```
 GIVEN two empty directories A and B
-WHEN `git show v1.7.1:scripts/init-wiki.sh` is run for A with --tool <t> and namespaces N
+WHEN scripts/init-wiki.sh from a checkout of tag v1.7.1 is run for A with --tool <t> and namespaces N
 AND /llm-wiki setup is run for B with tool <t>, namespaces N, no memory path, no git, on the same day
 THEN the file lists of A and B SHALL be identical
-AND every file SHALL be byte-identical, except the wiki_path line of llm-wiki.yml
+AND every file SHALL be byte-identical, except in llm-wiki.yml the wiki_path line and the
+    trailing space after an empty value (REQ-791)
 (run for t = logseq and t = obsidian, N = default and N = "Engineering Sales Support")
 ```
 
