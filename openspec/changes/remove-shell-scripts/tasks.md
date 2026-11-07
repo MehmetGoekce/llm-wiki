@@ -97,5 +97,10 @@ tree before its deletion as reference.
 
 Finding during the run: the first Obsidian runs wrote `pages_dir:` without the trailing space the
 script wrote. REQ-791 now specifies no trailing space (accepted difference, CHANGELOG).
+Portal result for v1.8.0 (`042d789`), 2026-11-07: refused again, same rule
+(`LOCAL_CODE_FILE_TYPE`), no file list given. Every file was plain text or PNG without `#!` and
+without the executable bit; the only files outside the allowed extensions were `diagrams/*.mmd`.
+Fixed in v1.8.1 (diagrams moved into `docs/diagrams.md`, plugin.md REQ-835a: extension counts too).
+
 Not run: Scenarios 3, 5, 6, 8, 9 separately (8 is covered by the custom-namespace parity cases),
 and a run inside an interactive session with the plugin installed the regular way.

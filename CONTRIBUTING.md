@@ -31,7 +31,7 @@ claude --plugin-dir .          # Wiki root: an empty test directory; then /llm-w
 
 When you change the setup workflow or a template, compare the result with the previous release. Check out the last release tag in a second worktree, set up one wiki with each version using the same answers, and run `diff -r` on the two directories. Only the `wiki_path` line of `llm-wiki.yml` may differ, unless your change is meant to alter the output.
 
-The repository must stay free of executable files: no file may start with `#!`, and every file must be Markdown, plain text, JSON, YAML or a PNG/JPEG/GIF/WebP/ICO image. Anthropic's plugin directory refuses anything else from accounts that are not a Verified organization.
+The repository must stay free of executable files: no file may start with `#!`, and every file must be Markdown, plain text, JSON, YAML or a PNG/JPEG/GIF/WebP/ICO image, with the matching extension. A diagram or code sample goes into a fenced block of a `.md` file, not into a file of its own. Anthropic's plugin directory refuses anything else from accounts that are not a Verified organization.
 
 The skill is `SKILL.md` in the repository root; the plugin must not have a `skills/` directory, or Claude Code stops treating the root file as the plugin's single skill and the command is no longer `/llm-wiki`. It refers to the wiki location as `${user_config.wiki_path}`; keep that placeholder to the one `Wiki root:` line, because the README tells users of a copied skill to replace every occurrence.
 
@@ -55,8 +55,9 @@ Example: `feat: add /llm-wiki export command for PDF generation`
 
 1. Add the release to `CHANGELOG.md`.
 2. Set `version` in `.claude-plugin/plugin.json` to the same version. Plugin users stay on the old version until this value changes.
-3. Run `claude plugin validate . --strict`, and check that no tracked file starts with `#!` (this must print nothing):
+3. Run `claude plugin validate . --strict`, and check the directory file policy (plugin.md REQ-835-836). Both commands must print nothing:
    `for f in $(git ls-files); do [ "$(head -c2 "$f")" = '#!' ] && echo "$f"; done`
+   `git ls-files | grep -vE '\.(md|txt|json|ya?ml|png|jpe?g|gif|webp|ico)$' | grep -vxE 'LICENSE|\.gitignore'`
 4. Merge, tag the merge commit, create the GitHub release from the tag.
 
 ## Questions?
