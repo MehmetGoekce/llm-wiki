@@ -3,8 +3,8 @@
 ## Description
 
 llm-wiki is distributed as a Claude Code plugin from its own repository, which also serves as the
-marketplace. The plugin is a single root skill, invoked as `/llm-wiki <subcommand>`, plus the init
-script both setup paths share.
+marketplace. The plugin is a single root skill, invoked as `/llm-wiki <subcommand>`, plus the page
+templates the `setup` subcommand renders. It contains no executable files.
 
 ---
 
@@ -14,11 +14,25 @@ script both setup paths share.
 
 - REQ-830: The repository MUST contain `.claude-plugin/plugin.json` with `name` set to `llm-wiki`.
 - REQ-831: The manifest MUST set `version`, `description`, `author.name`, `license` and
-  `repository`.
+  `repository`, and MUST NOT contain fields the plugin directory reports as unrecognized.
 - REQ-832: `version` in the manifest MUST equal the topmost released version in `CHANGELOG.md`.
 - REQ-833: `claude plugin validate . --strict` MUST pass on the repository root before a release
   is tagged.
 - REQ-834: The plugin root MUST NOT contain a `CLAUDE.md`.
+
+### Directory file policy
+
+- REQ-835: Every tracked file MUST be Markdown, plain text, JSON, YAML, or a PNG, JPEG, GIF, WebP
+  or ICO image, saved as UTF-8 without NUL bytes where it is text. `LICENSE` and `.gitignore` count
+  as plain text.
+- REQ-836: No tracked file MAY start with `#!`, and the repository MUST NOT contain package manager
+  configuration files (`package.json`, `pnpm-workspace.yaml`, `requirements.txt` and the like).
+- REQ-837: `SKILL.md` MUST NOT embed a program for the Bash tool to run in place of a removed
+  script (for example a `python3 -c` or heredoc program). Single commands (`git`, `date`, `test`,
+  `ls`, `mkdir`) are allowed.
+
+Reason: Anthropic's plugin directory accepts other files only from Verified organizations
+(refusal of v1.7.1 on 2026-11-07).
 
 ### Marketplace
 
@@ -46,32 +60,17 @@ script both setup paths share.
 - REQ-862: The plugin MUST NOT contain a `skills/` directory and the manifest MUST NOT set a
   `skills` key. Either one makes Claude Code stop loading the root `SKILL.md` as the plugin's
   single skill. Setup is a subcommand of the skill (`/llm-wiki setup`), not a skill of its own.
-- REQ-863: The `setup` subcommand SHALL ask for tool, namespaces (with the default list), memory path
-  (optional) and git initialization, then run `scripts/init-wiki.sh` with those values and
-  `--wiki-path` set to the configured `wiki_path`.
-- REQ-864: The `setup` subcommand MUST NOT create or edit wiki pages itself; page creation is the init
-  script's job.
+- REQ-863: The `setup` subcommand SHALL ask for tool, namespaces (with the default list), memory
+  path (optional) and git initialization, then create the wiki skeleton in the configured
+  `wiki_path` as specified in setup.md.
+- REQ-864: The `setup` subcommand SHALL create pages and the config only as specified in setup.md
+  REQ-780-792 and MUST NOT create or edit any other wiki page.
 - REQ-865: If `llm-wiki.yml` already exists at `wiki_path`, the `setup` subcommand SHALL report that the
   wiki is already set up and make no changes unless the user asks to add missing pages.
 - REQ-866: If the current project contains `.claude/commands/wiki.md`, the `setup` subcommand SHOULD warn
   that a copied skill and the plugin are both installed and name the file to delete.
-- REQ-867: The skill MUST reference bundled files through `${CLAUDE_PLUGIN_ROOT}` in the skill body
+- REQ-867: The skill MUST reference bundled files (the templates) through `${CLAUDE_PLUGIN_ROOT}` in the skill body
   and MUST NOT assume the variable exists in the Bash tool's environment.
-
-### Init script
-
-- REQ-870: `scripts/init-wiki.sh` MUST run without prompting; all input arrives as flags.
-- REQ-871: Required flags: `--tool` (`logseq` or `obsidian`) and `--wiki-path`. Optional:
-  `--namespaces`, `--memory-path`, `--git-init`, `--commit`.
-- REQ-872: Without `--namespaces` the script SHALL use the default list of setup.md REQ-740.
-- REQ-873: The script SHALL create the pages and the config file as specified in setup.md
-  REQ-780-792, and MUST NOT overwrite an existing page or an existing `llm-wiki.yml`.
-- REQ-874: The script SHALL print one line per created or skipped file and exit 0 on success.
-- REQ-875: On an invalid flag value, a missing required flag or a missing template directory the
-  script SHALL print the reason to stderr and exit 1 before creating any file.
-- REQ-876: The script MUST locate templates relative to its own location, not the working
-  directory.
-- REQ-877: The script MUST require only bash, python3 and, for `--git-init`/`--commit`, git.
 
 ### State
 
@@ -116,26 +115,6 @@ THEN the skill SHALL read ~/notes/wiki/llm-wiki.yml as its first operation
 AND answer from the wiki
 ```
 
-### Scenario 4: Init script rejects bad input
-
-```
-GIVEN an empty directory /tmp/w
-WHEN init-wiki.sh --tool notion --wiki-path /tmp/w is run
-THEN it SHALL print an error naming the invalid tool to stderr
-AND exit 1
-AND /tmp/w SHALL still be empty
-```
-
-### Scenario 5: Init script is idempotent
-
-```
-GIVEN init-wiki.sh --tool logseq --wiki-path /tmp/w has completed
-WHEN the same command runs again
-THEN every page SHALL be reported as skipped
-AND llm-wiki.yml SHALL be unchanged
-AND the exit code SHALL be 0
-```
-
 ### Scenario 6: Release without version bump
 
 ```
@@ -145,23 +124,33 @@ WHEN the release checklist is run
 THEN the REQ-832 check SHALL fail and the release SHALL NOT be tagged
 ```
 
+### Scenario 7: Directory file policy
+
+```
+GIVEN the repository at the release commit
+WHEN every tracked file is checked for its type, its first two bytes and its encoding
+THEN no file SHALL start with "#!"
+AND every file SHALL be Markdown, text, JSON, YAML or an allowed image
+AND every text file SHALL be UTF-8 without NUL bytes
+```
+
 ---
 
 ## Acceptance Criteria
 
 - [ ] `claude plugin validate . --strict` passes on the repository root
-- [ ] Manifest version equals the topmost CHANGELOG release
+- [ ] Manifest version equals the topmost CHANGELOG release; no unrecognized manifest fields
 - [ ] Plugin installs from the repository as `llm-wiki@mehmetgoekce` with the single skill `llm-wiki`
 - [ ] `/llm-wiki <subcommand>` reaches the skill with its arguments; no `skills/` directory exists
 - [ ] The skill reads the config from the configured wiki root without asking
-- [ ] `/llm-wiki setup` creates pages only through the init script
-- [ ] Init script: no prompts, validates before writing, idempotent
+- [ ] `/llm-wiki setup` creates exactly the files of setup.md, byte-identical to v1.7.1
+- [ ] No executable or shebang file in the repository (Scenario 7)
 - [ ] Nothing is written to the plugin directory
 
 ---
 
 ## Dependencies
 
-- specs/setup.md defines the pages and config file the init script creates
+- specs/setup.md defines the pages and config file the `setup` subcommand creates
 - specs/config.md defines how the wiki root and `llm-wiki.yml` are resolved
 - Claude Code plugin manifest and marketplace format (code.claude.com/docs/en/plugins-reference)

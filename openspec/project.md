@@ -9,7 +9,7 @@ inspired by CPU memory hierarchies.
 - **Owner:** Mehmet Goekce / MEMOTECH
 - **License:** MIT (open-source)
 - **Repository:** github.com/MehmetGoekce/llm-wiki
-- **Status:** Released (v1.7), actively developed
+- **Status:** Released (v1.8), actively developed
 
 ## Architecture
 
@@ -21,9 +21,9 @@ inspired by CPU memory hierarchies.
 ## Tech Stack
 
 - **Runtime:** Claude Code (CLI)
-- **Distribution:** Claude Code plugin from this repository (which is also the marketplace);
-  `setup.sh` for installs without the plugin
-- **Dependencies:** bash, python3, git (no npm, no pip)
+- **Distribution:** Claude Code plugin from this repository (which is also the marketplace); a
+  skill copied by hand for installs without the plugin
+- **Dependencies:** none beyond Claude Code; git optional (no scripts, no npm, no pip)
 - **Wiki tools:** Logseq (outliner) or Obsidian (flat markdown)
 - **Config:** `llm-wiki.yml` (YAML)
 - **Format:** Markdown with tool-specific conventions
@@ -38,7 +38,8 @@ inspired by CPU memory hierarchies.
 
 ## Constraints
 
-- Zero external dependencies beyond bash, python3, git
+- No executable files and no dependencies: only Markdown, text, JSON, YAML and images
+  (plugin directory policy, plugin.md REQ-835-837); git optional
 - Must work on macOS, Linux, WSL
 - Must support both Logseq and Obsidian (identical capabilities, different format)
 - Config always reads from `llm-wiki.yml`
@@ -56,7 +57,7 @@ inspired by CPU memory hierarchies.
 | specs/prune.md | /llm-wiki prune — L2 index eviction, `--l1` verification | 39 | 15 |
 | specs/schema.md | Page types, properties, validation, format rules | 49 | 10 |
 | specs/config.md | Wiki root resolution, llm-wiki.yml loading, validation, error handling | 23 | 11 |
-| specs/setup.md | setup.sh interactive installer, page and config creation | 49 | 11 |
-| specs/plugin.md | Plugin manifest, marketplace, root skill `/llm-wiki`, init script | 28 | 6 |
+| specs/setup.md | `setup` subcommand: questions, page and config creation, first commit | 44 | 11 |
+| specs/plugin.md | Plugin manifest, marketplace, root skill `/llm-wiki`, file policy | 23 | 5 |
 | specs/l1-l2-routing.md | L1/L2 boundary decision logic, L1 staleness | 40 | 11 |
-| **Total** | **Complete system coverage** | **348** | **104** |
+| **Total** | **Complete system coverage** | **338** | **103** |

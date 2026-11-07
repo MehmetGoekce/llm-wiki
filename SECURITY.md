@@ -13,7 +13,7 @@ Report it privately through GitHub: [Report a vulnerability](https://github.com/
 Helpful to include:
 
 - the version or commit you tested
-- the subcommand involved (`setup`, `ingest`, `query`, `prune`, `lint`, `status`, `import`) or the script
+- the subcommand involved (`setup`, `ingest`, `query`, `prune`, `lint`, `status`, `import`)
 - steps to reproduce, and what happened to which files
 
 ## What to expect
@@ -22,6 +22,6 @@ llm-wiki is maintained by one person. I aim to acknowledge a report within seven
 
 ## Scope
 
-In scope: the skill instructions in `SKILL.md`, `setup.sh`, and the scripts in `scripts/`. Examples: an instruction that makes Claude write outside the configured wiki or memory directory, a script that mishandles a path, or a way to get credentials written into wiki pages.
+In scope: the skill instructions in `SKILL.md` and the page templates in `templates/`. Examples: an instruction that makes Claude write outside the configured wiki or memory directory, a setup step that mishandles a path or overwrites a file, or a way to get credentials written into wiki pages.
 
 Out of scope: Claude Code itself, Logseq, Obsidian, and the content of your own wiki.

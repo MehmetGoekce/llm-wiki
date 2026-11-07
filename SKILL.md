@@ -54,10 +54,10 @@ Wiki maintainer for a personal or team knowledge base. You process source materi
 
 Wiki root: `${user_config.wiki_path}`
 
-The wiki root above is set by the plugin's "Wiki root" option, or written in by `setup.sh` for a
-copied skill. If it is not a filesystem path but an unexpanded placeholder (it starts with a dollar
-sign and a brace), stop and tell the user: "Wiki root is not configured. Set it in the llm-wiki
-plugin settings, or re-run setup.sh for a copied skill." Never guess a wiki root.
+The wiki root above is set by the plugin's "Wiki root" option, or written in by hand for a copied
+skill. If it is not a filesystem path but an unexpanded placeholder (it starts with a dollar sign
+and a brace), stop and tell the user: "Wiki root is not configured. Set it in the llm-wiki plugin
+settings, or replace the placeholder in a copied skill (see README)." Never guess a wiki root.
 
 Read `llm-wiki.yml` from the wiki root FIRST (every command except `setup`, which creates it). If the
 file is missing, stop with: "llm-wiki.yml not found in <wiki root>. Run /llm-wiki setup to create one." If its `wiki_path`
@@ -373,42 +373,109 @@ Phase 4 - Output:
 
 ## Workflow: setup
 
-One-time. Creates the wiki skeleton in the wiki root. Pages and the config file are created by a
-script; you collect the answers and run it. Do not create or edit wiki pages yourself.
+One-time. Creates the wiki skeleton in the wiki root: Schema, Dashboard, one hub page per namespace,
+the Access-Log page and `llm-wiki.yml`. You render the bundled templates and write the files
+yourself with the Read and Write tools; `git` runs through Bash. Create nothing besides the files
+listed in Phase 3, and never overwrite an existing file. Do not write a script or an inline
+program (`python3 -c`, heredoc) to do this; use the tools step by step.
 
 Phase 1 - Check:
   - If `llm-wiki.yml` exists in the wiki root: report that the wiki is already set up, show its
     `tool` and `namespaces`, and stop without changing anything. Only if the user then asks to add
-    missing pages, continue with the values from the existing config; the script skips every file
+    missing pages, continue with the values from the existing config; Phase 3 skips every file
     that already exists.
+  - If the wiki root exists and is not a directory: stop with an error naming the path.
+  - Templates live in `${CLAUDE_PLUGIN_ROOT}/templates/logseq/` and
+    `${CLAUDE_PLUGIN_ROOT}/templates/obsidian/`. If that path still starts with a dollar sign and a
+    brace, stop and tell the user: "This is a copied skill and the clone path is not filled in.
+    Replace the CLAUDE_PLUGIN_ROOT placeholder in the copied file with the path of your llm-wiki
+    clone (see the README)."
 
 Phase 2 - Ask the user, in one message:
   - Tool: Logseq or Obsidian. If the wiki root contains a `logseq/` directory suggest Logseq, if it
     contains `.obsidian/` suggest Obsidian.
   - Namespaces: default `Business Tech Content Projects People Learning Reference`, or their own
-    list. Names start with a letter and contain only letters, numbers and hyphens.
+    space-separated list.
   - Claude Code memory directory for the L1 features (optional, usually
     `~/.claude/projects/<project>/memory/`).
   - If the wiki root is not a git repository: whether to initialize git there.
 
-Phase 3 - Run the script with the answers:
+  Validate before writing anything, and ask again on an invalid answer:
+  - Tool must be Logseq or Obsidian.
+  - Every namespace must match `^[A-Za-z][A-Za-z0-9-]*$`; name the invalid ones.
+  - Read the four templates of the chosen tool (`Schema.md`, `Dashboard.md`, `Hub.md`,
+    `Access-Log.md`). If one cannot be read, stop with the path you tried.
+  - Expand a leading `~` in the memory path to the home directory. Do not check that it exists.
+  - git: if the user wants git init or the root is a repository, check `git --version`. Without
+    git, warn that the git steps are skipped and continue.
 
-  ```bash
-  bash "${CLAUDE_PLUGIN_ROOT}/scripts/init-wiki.sh" \
-    --tool <logseq|obsidian> \
-    --wiki-path "<wiki root>" \
-    --namespaces "<space-separated list>" \
-    --commit
-  ```
+Phase 3 - Create:
+  1. Run `date +%Y-%m-%d` once. This is DATE for every file.
+  2. `mkdir -p "<wiki root>"`. Use the absolute root without a trailing slash from here on.
+  3. Targets, in this order. `<ns>` stands for each namespace in the order the user gave.
 
-  - Add `--memory-path "<dir>"` if the user gave one and `--git-init` if they agreed to it.
-    `--commit` commits only the files the script created, and only if the wiki root is a git
-    repository.
-  - If the script exits with an error, show its message and stop. Do not work around it by writing
-    files by hand.
+     | Page | Logseq (`pages_dir: pages`) | Obsidian (`pages_dir:` empty) | Template |
+     |------|------|------|------|
+     | Schema | `pages/Wiki___Schema.md` | `Wiki/Schema.md` | `Schema.md` |
+     | Dashboard | `pages/Wiki___Dashboard.md` | `Wiki/Dashboard.md` | `Dashboard.md` |
+     | Hub per namespace | `pages/Wiki___<ns>.md` | `Wiki/<ns>/_index.md` | `Hub.md` |
+     | Access-Log | `pages/Wiki___Reference___Access-Log.md` | `Wiki/Reference/Access-Log.md` | `Access-Log.md` |
+     | Config | `llm-wiki.yml` | `llm-wiki.yml` | (below) |
+
+     The Access-Log page is created even when Reference is not one of the namespaces.
+  4. Check which targets exist with one Bash call (`test -e` per path, relative to the root).
+     Existing targets are skipped, whatever their content. Do not rely on the Write tool to refuse.
+  5. Git init, only if the user agreed and the root has no `.git`: `git -C "<root>" init`. Then, if
+     there is no `.gitignore`, write one with these lines (each followed by a newline):
+     - Logseq: `logseq/bak/`, `logseq/.recycle/`, `.DS_Store`, `.logseq/`
+     - Obsidian: `.obsidian/workspace.json`, `.obsidian/workspace-mobile.json`, `.DS_Store`, `.trash/`
+  6. Write each page that does not exist: the template text with these placeholders replaced, and
+     nothing else changed. Keep every character, tab, line break and the final newline of the
+     template. Do not reformat, translate, shorten or extend it.
+     - `{{DATE}}`: DATE
+     - `{{NAMESPACES}}` (Schema): `Wiki/<ns>` for each namespace, joined by a comma and a space,
+       for example `Wiki/Tech, Wiki/Content`
+     - `{{NAMESPACE_LINKS}}` (Dashboard): one line per namespace, joined by a single newline, with
+       no newline after the last one. Logseq line: a tab character, then `- [[Wiki/<ns>]]`.
+       Obsidian line: `- [[Wiki/<ns>]]`.
+     - `{{NAMESPACE}}` (Hub): the namespace of that hub page
+  7. Write `llm-wiki.yml` last, if it does not exist. Exactly these lines, each followed by a
+     newline. An empty value is written as the key and colon with nothing after it (`pages_dir:`):
+
+     ```
+     # llm-wiki configuration
+     # Generated by llm-wiki on <DATE>
+
+     tool: <logseq|obsidian>
+     wiki_path: <absolute wiki root>
+     pages_dir: <pages, or empty for Obsidian>
+     memory_path: <memory path, or empty>
+
+     namespaces:
+       - <first namespace>
+       - <next namespace, one line each>
+     ```
+  8. After each target, print `Created: <label>` or `Skipped (already exists): <label>`. Label:
+     `Wiki/<page>` for Logseq pages (`Wiki/Reference/Access-Log`), the relative path for Obsidian
+     pages, `llm-wiki.yml` for the config, `.gitignore` for the ignore file.
+  9. Commit, only if the root is a git repository and this run created at least one file. Stage
+     exactly the created files by path, never anything else:
+     `git -C "<root>" add -- <created paths>`, then commit with this message (N = number of
+     namespaces):
+
+     ```
+     wiki: initial setup via llm-wiki
+
+     Schema, Dashboard, and hub pages for <N> namespaces.
+     Tool: <logseq|obsidian>
+
+     Generated by https://github.com/MehmetGoekce/llm-wiki
+     ```
+
+     If the commit fails, warn and leave the files uncommitted; do not stop.
 
 Phase 4 - Report:
-  - Files created and skipped (from the script output), the path of `llm-wiki.yml`
+  - Files created and skipped, the path of `llm-wiki.yml`
   - Next steps: open the wiki in the chosen tool, try `/llm-wiki ingest "<a first source>"`, then
     `/llm-wiki status`
   - If the current project contains `.claude/commands/wiki.md`: tell the user that an older copied

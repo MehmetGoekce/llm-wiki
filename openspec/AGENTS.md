@@ -15,7 +15,8 @@ that provides a structured knowledge management system for LLM assistants.
 ## Key Architectural Rules
 
 - **Tool-agnostic:** Every feature MUST work in both Logseq and Obsidian modes
-- **Zero dependencies:** Only bash, python3, and git. No npm, no pip, no Docker
+- **No scripts, no dependencies:** The plugin holds only Markdown, text, JSON, YAML and images
+  (plugin.md REQ-835-837). The skill uses Claude Code's tools; git is optional. No npm, no pip, no Docker
 - **No deletion:** New facts are appended. A fact that supersedes a stated state rewrites
   that block in place; the old wording moves, dated, into its collapsed History child
   (ingest.md REQ-032, REQ-032a/b)
@@ -39,7 +40,8 @@ that provides a structured knowledge management system for LLM assistants.
 ## Testing
 
 - No test framework (zero-dependency constraint)
-- Manual verification via `scripts/init-wiki.sh` and `setup.sh` with test directories
+- Manual verification with `claude --plugin-dir .` against test directories
+- Setup changes: compare with the previous release tag via `diff -r` (setup.md Scenario 11)
 - `claude plugin validate . --strict` before a release
 - BDD scenarios from specs serve as manual test scripts
 - Each scenario describes: precondition, action, expected result
@@ -51,8 +53,6 @@ that provides a structured knowledge management system for LLM assistants.
 |------|---------|
 | `.claude-plugin/` | Plugin manifest (`plugin.json`) and marketplace (`marketplace.json`) |
 | `SKILL.md` | /llm-wiki skill definition (the prompt Claude Code executes), including the `setup` subcommand. Root skill of the plugin: no `skills/` directory |
-| `scripts/init-wiki.sh` | Non-interactive page and config creation |
-| `setup.sh` | Interactive installer for installs without the plugin; calls the init script |
 | `config.example.yml` | Configuration template |
 | `docs/` | Architecture docs, schema reference |
 | `templates/logseq/` | Logseq page templates (Schema, Hub, Dashboard) |

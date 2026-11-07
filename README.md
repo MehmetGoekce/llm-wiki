@@ -89,15 +89,29 @@ Tested with Claude Code 2.1.296.
 
 ### Without the plugin
 
+Clone the repository and copy the skill into the project that should use it:
+
 ```bash
-git clone https://github.com/MehmetGoekce/llm-wiki.git
-cd llm-wiki
-./setup.sh
+git clone https://github.com/MehmetGoekce/llm-wiki.git ~/llm-wiki
+mkdir -p ~/myproject/.claude/commands
+cp ~/llm-wiki/SKILL.md ~/myproject/.claude/commands/wiki.md
 ```
 
-`setup.sh` asks the same questions in the terminal, creates the same pages, and can copy the skill
-into one project's `.claude/commands/wiki.md`. That copy is invoked as `/wiki <command>` and does not
-update itself.
+In the copy, replace two placeholders with absolute paths:
+
+- `${user_config.wiki_path}` (the "Wiki root:" line): your Logseq graph or Obsidian vault
+- `${CLAUDE_PLUGIN_ROOT}` (the setup workflow): the clone, so that setup finds `templates/`
+
+On Linux (on macOS, write `sed -i ''` instead of `sed -i`):
+
+```bash
+sed -i -e 's|\${user_config.wiki_path}|/home/you/notes/wiki|g' \
+       -e 's|\${CLAUDE_PLUGIN_ROOT}|/home/you/llm-wiki|g' \
+       ~/myproject/.claude/commands/wiki.md
+```
+
+Then run `/wiki setup` in that project. The copy is invoked as `/wiki <command>`, stays at the
+version you copied, and needs the clone to stay where it is. The plugin is the recommended path.
 
 The rest of this README writes `/llm-wiki <command>`. With a copied skill, type `/wiki <command>`.
 

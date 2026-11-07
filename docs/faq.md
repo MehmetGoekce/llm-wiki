@@ -39,7 +39,7 @@ See [docs/logseq-vs-obsidian.md](logseq-vs-obsidian.md) for the full comparison.
 
 Yes, but not with a single command yet. For now:
 
-1. Run `/llm-wiki setup` (or `./setup.sh`) to create the schema and namespace structure in a fresh wiki location.
+1. Run `/llm-wiki setup` to create the schema and namespace structure in a fresh wiki location.
 2. Use `/llm-wiki ingest <path-to-existing-note>` to process notes one at a time. The LLM extracts entities, fits them into your schema, and creates cross-references.
 3. Iterate — Claude will ask clarifying questions for ambiguous content.
 
@@ -55,7 +55,7 @@ Porting to other CLI-based LLM coding tools is on the roadmap but requires signi
 
 Karpathy's gist is a concept essay. It describes *what* an LLM wiki should do (ingest, query, lint) and why it matters. It does not specify tools, file formats, schemas, or workflows.
 
-llm-wiki is an implementation. It picks Claude Code as the LLM, Logseq or Obsidian as the wiki UI, defines a concrete schema with 5 page types, specifies 13 lint rules with auto-fix behavior, and adds the L1/L2 cache layer — with two-stage hub-index routing, LRU eviction for L2, and claim-class verification for L1 — that the gist does not mention. Setup takes 5 minutes with `./setup.sh`; the gist is 100% design, 0% code.
+llm-wiki is an implementation. It picks Claude Code as the LLM, Logseq or Obsidian as the wiki UI, defines a concrete schema with 5 page types, specifies 13 lint rules with auto-fix behavior, and adds the L1/L2 cache layer — with two-stage hub-index routing, LRU eviction for L2, and claim-class verification for L1 — that the gist does not mention. Setup takes 5 minutes with `/llm-wiki setup`; the gist is 100% design, 0% code.
 
 If you want the pure concept, read the gist. If you want a working system, use llm-wiki.
 
@@ -91,13 +91,13 @@ After the first push, the L1/L2 boundary enforces itself. The lint runs catch dr
 
 The plugin. It installs once for all your projects, receives new releases through the marketplace, and knows your wiki location from its "Wiki root" option. Its command is `/llm-wiki <subcommand>`, starting with `/llm-wiki setup`.
 
-The copied skill (`./setup.sh`, then `/wiki <command>`) is for setups where plugins are not available. It lives in one project's `.claude/commands/` and stays at the version you copied.
+The copied skill (copied by hand as described in the README, then `/wiki <command>`) is for setups where plugins are not available. It lives in one project's `.claude/commands/` and stays at the version you copied.
 
 ## Can I use more than one wiki on the same machine?
 
 The plugin holds one Wiki root per user. Claude Code stores plugin options in the user settings, not per project, so the plugin cannot point at a different wiki in each project.
 
-For a second wiki, run `./setup.sh` for it and let the script copy the skill into the project that should use it. That project then has `/wiki` for the second wiki and `/llm-wiki` for the first.
+For a second wiki, copy the skill into the project that should use it (README, "Without the plugin") and run `/wiki setup` there. That project then has `/wiki` for the second wiki and `/llm-wiki` for the first.
 
 ## Where do I report bugs or request features?
 

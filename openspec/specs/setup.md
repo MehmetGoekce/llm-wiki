@@ -1,16 +1,11 @@
-# Spec: setup.sh — Interactive Installer
+# Spec: Setup — Wiki Skeleton Creation
 
 ## Description
 
-The setup script is the entry point for users who install without the plugin. It
-asks for tool, wiki path, namespaces, memory path and git, then calls
-`scripts/init-wiki.sh` (specs/plugin.md REQ-870-877) to create the initial pages
-(Schema, Dashboard, Hub pages, Access-Log) and the config file, and optionally copies
-the skill into one Claude Code project, where it is invoked as `/wiki`. It requires only bash, python3, and git.
-
-The requirements for page creation, config generation, git init and the initial commit
-(Steps 3 and 6-9, 11) bind the init script; `setup.sh` collects the answers and passes
-them on.
+`/llm-wiki setup` (or `/wiki setup` in a copied skill) creates the initial pages (Schema,
+Dashboard, one hub page per namespace, Access-Log), the config file `llm-wiki.yml` and, on request,
+a git repository with a first commit. Claude asks the questions in the conversation, renders the
+bundled templates and writes the files itself. No script is involved.
 
 ---
 
@@ -18,310 +13,303 @@ them on.
 
 ### Prerequisites
 
-- REQ-700: The system MUST require bash (any version supporting `read -p`).
-- REQ-701: The system MUST require python3. If python3 is not available, the
-  system SHALL display an error and exit.
-- REQ-702: The system MUST require git for the optional git init step.
-  If git is not available, git-related steps SHALL be skipped with a warning.
-- REQ-703: The system MUST NOT require any package manager (npm, pip, etc.)
-  or any installed libraries beyond the standard library.
+- REQ-700: Setup MUST need nothing but Claude Code with the Read, Write and Bash tools.
+- REQ-702: git is needed only for git initialization and the first commit. If git is not
+  available, both steps SHALL be skipped with a warning; setup continues.
+- REQ-703: Setup MUST NOT require any package manager (npm, pip, etc.) or installed
+  library.
 
 ### Step 1: Tool Selection
 
-- REQ-710: The system SHALL prompt the user to choose between Logseq (1) and
-  Obsidian (2).
-- REQ-711: If the user enters a value other than 1 or 2, the system SHALL
-  display an error and exit.
-- REQ-712: The tool choice determines ALL downstream behavior: file naming,
-  property syntax, directory structure, template selection.
+- REQ-710: Setup SHALL ask whether the wiki is a Logseq graph or an Obsidian vault. If
+  the wiki root contains `logseq/` it SHALL suggest Logseq; if it contains `.obsidian/` it SHALL
+  suggest Obsidian.
+- REQ-711: On any other answer setup SHALL say which values are valid and ask again.
+  Nothing is written before a valid answer.
+- REQ-712: The tool choice determines ALL downstream behavior: file naming, property
+  syntax, directory structure, template selection.
 
-### Step 2: Wiki Path
+### Step 2: Wiki Root
 
-- REQ-720: The system SHALL prompt for the wiki/vault root path with a
-  tool-specific default (`~/Documents/Logseq` or `~/Documents/ObsidianVault`).
-- REQ-721: The system SHALL expand `~` to `$HOME` in the provided path.
-- REQ-722: If the path does not exist, the system SHALL ask "Create it? [y/n]".
-  On "y": create with `mkdir -p`. On "n": exit with error.
+- REQ-720: The wiki root is the configured one (config.md REQ-670). Setup MUST NOT ask
+  for it and MUST NOT use another directory.
+- REQ-721: A leading `~` SHALL be expanded to the user's home directory.
+- REQ-722: If the wiki root does not exist, setup SHALL create it (`mkdir -p`) after all
+  answers are valid. If the path exists and is not a directory, setup SHALL stop with an error
+  naming the path and write nothing.
 
 ### Step 3: Pages Directory
 
-- REQ-730: For Logseq, `pages_dir` SHALL be set to `pages`.
-  For Obsidian, `pages_dir` SHALL be set to empty string.
-- REQ-731: If the pages directory does not exist, the system SHALL create it
-  with `mkdir -p`.
+- REQ-730: For Logseq, `pages_dir` SHALL be `pages`. For Obsidian, `pages_dir` SHALL be
+  the empty string.
+- REQ-731: A missing pages directory SHALL be created.
 
 ### Step 4: Namespaces
 
-- REQ-740: The system SHALL offer a default namespace list:
+- REQ-740: Setup SHALL offer the default namespace list:
   Business, Tech, Content, Projects, People, Learning, Reference.
-- REQ-741: The user MAY enter a custom space-separated list or press Enter
-  to accept defaults.
-- REQ-742: Namespace names MUST start with a letter and contain only letters,
-  numbers and hyphens. On any other name the system SHALL display an error and
-  exit before creating pages. Title Case is recommended, not validated.
+- REQ-741: The user MAY give a space-separated list of their own or accept the default.
+- REQ-742: Namespace names MUST match `^[A-Za-z][A-Za-z0-9-]*$`. On any other name
+  setup SHALL name the invalid entries and ask again. Title Case is recommended, not validated.
+- REQ-745: Setup MUST validate every answer (tool, namespaces, wiki root, readable
+  templates) before its first write. "Write" includes creating the wiki root, `git init` and every
+  file.
 
 ### Step 5: Memory Path
 
-- REQ-750: The system SHALL prompt for the Claude Code memory directory path.
-- REQ-751: The user MAY skip this step by pressing Enter or entering "skip". If
-  skipped, `memory_path` is empty in the generated config.
-- REQ-752: The system SHALL expand `~` to `$HOME` in the provided path.
-- REQ-753: The system does NOT validate that the memory path exists (it may
-  be created later by Claude Code).
+- REQ-750: Setup SHALL ask for the Claude Code memory directory (L1), marked optional,
+  with `~/.claude/projects/<project>/memory/` as the usual form.
+- REQ-751: The user MAY skip it. If skipped, `memory_path` is empty in the config.
+- REQ-752: A leading `~` SHALL be expanded.
+- REQ-753: Setup does NOT check that the memory path exists.
 
 ### Step 6: Git Init
 
-- REQ-760: If the wiki directory does not have a `.git` directory, the system
-  SHALL ask "Initialize git? [y/n]".
-- REQ-761: On "y": run `git init`, create tool-specific `.gitignore`.
-- REQ-762: Logseq `.gitignore` SHALL include: `logseq/bak/`, `logseq/.recycle/`,
-  `.DS_Store`, `.logseq/`.
-- REQ-763: Obsidian `.gitignore` SHALL include: `.obsidian/workspace.json`,
+- REQ-760: If the wiki root has no `.git` directory, setup SHALL ask whether to
+  initialize git there.
+- REQ-761: On yes: run `git -C <root> init`, then write the tool-specific `.gitignore`
+  unless a `.gitignore` already exists. A `.gitignore` written here counts as a created file
+  (REQ-810).
+- REQ-762: Logseq `.gitignore`, one entry per line in this order: `logseq/bak/`,
+  `logseq/.recycle/`, `.DS_Store`, `.logseq/`.
+- REQ-763: Obsidian `.gitignore`, in this order: `.obsidian/workspace.json`,
   `.obsidian/workspace-mobile.json`, `.DS_Store`, `.trash/`.
-- REQ-764: On "n": skip git initialization entirely.
-- REQ-765: If `.git` already exists, skip this step silently.
+- REQ-764: On no: skip git initialization entirely.
+- REQ-765: If `.git` already exists, skip this step without asking.
 
-### Step 7: Template Validation
+### Step 7: Templates
 
-- REQ-770: The system SHALL locate the template directory at
-  `templates/$TOOL/` relative to the repository, independent of the working
-  directory (specs/plugin.md REQ-876).
-- REQ-771: If the template directory does not exist, the system SHALL display
-  an error and exit.
+- REQ-770: Templates SHALL be read from `${CLAUDE_PLUGIN_ROOT}/templates/<tool>/`
+  (`Schema.md`, `Dashboard.md`, `Hub.md`, `Access-Log.md`). In a copied skill the placeholder is
+  replaced by the path of the repository clone (REQ-807).
+- REQ-771: If a template cannot be read, setup SHALL stop with an error naming the path
+  it tried and write nothing. If the path still contains the literal `${CLAUDE_PLUGIN_ROOT}`, the
+  message SHALL say that a copied skill needs the clone path substituted (README).
 
-### Step 8: Page Creation (Python Template Rendering)
+### Step 8: Page Creation
 
-- REQ-780: `setup.sh` SHALL call `scripts/init-wiki.sh` with the collected
-  answers. The init script SHALL use python3 to render templates with variable
-  substitution.
-- REQ-781: Template variables: `{{DATE}}` (today, YYYY-MM-DD),
-  `{{NAMESPACES}}` (comma-separated list), `{{NAMESPACE}}` (single name),
-  `{{NAMESPACE_LINKS}}` (formatted link list, used by the Dashboard).
-- REQ-782: The system SHALL create these pages:
-  - Schema page (from `Schema.md` template)
-  - Dashboard page (from `Dashboard.md` template)
-  - One Hub page per namespace (from `Hub.md` template)
-  - Access-Log page under the Reference namespace (from `Access-Log.md` template)
-- REQ-783: For Logseq: all pages created flat in `pages/` directory with
-  triple-underscore naming (`Wiki___Schema.md`, `Wiki___Tech.md`, etc.).
-- REQ-784: For Obsidian: Schema and Dashboard in `Wiki/` directory.
-  Hub pages in `Wiki/<Namespace>/_index.md` with directory creation.
-- REQ-785: The system SHALL create parent directories as needed (`mkdir -p`).
-- REQ-786: The system SHALL NOT overwrite existing pages. If a page already
-  exists, the system SHOULD skip it with a warning.
+- REQ-780: Setup SHALL render each template by literal replacement of its placeholders
+  and write the result with the Write tool.
+- REQ-780a: Apart from the placeholders, the written file MUST be identical to the
+  template: same characters, line breaks, indentation (including tab characters) and trailing
+  newline. Setup MUST NOT reformat, translate, shorten or complete template text.
+- REQ-781: Placeholder values:
+  - `{{DATE}}`: today as `YYYY-MM-DD`, taken once from `date +%Y-%m-%d` and used for every file.
+  - `{{NAMESPACES}}`: `Wiki/<ns>` for each namespace in the given order, joined by `, `.
+  - `{{NAMESPACE}}`: the namespace name of the hub page being written.
+  - `{{NAMESPACE_LINKS}}`: one line per namespace, `<prefix>[[Wiki/<ns>]]`, joined by a single
+    newline with no newline after the last line. The prefix is a tab followed by `- ` for Logseq
+    and `- ` for Obsidian.
+- REQ-782: Setup SHALL create, in this order: the Schema page, the Dashboard page, one
+  hub page per namespace in the given order, and the Access-Log page under the Reference namespace.
+- REQ-783: Logseq: all pages flat in `pages/`, named `Wiki___<name>.md`, where every `/`
+  in the page name becomes `___` (`pages/Wiki___Schema.md`, `pages/Wiki___Tech.md`,
+  `pages/Wiki___Reference___Access-Log.md`).
+- REQ-784: Obsidian: `Wiki/Schema.md`, `Wiki/Dashboard.md`, `Wiki/<ns>/_index.md` per
+  namespace, `Wiki/Reference/Access-Log.md`.
+- REQ-785: Parent directories SHALL be created as needed.
+- REQ-786: Setup MUST NOT overwrite an existing file. It SHALL check every target path
+  for existence before writing and skip the ones that exist. Relying on the Write tool to refuse is
+  not sufficient.
+- REQ-787: Setup SHALL report one line per target: `Created: <label>` or
+  `Skipped (already exists): <label>`. The label is `Wiki/<name>` for Logseq pages, the relative
+  path for Obsidian pages, and `llm-wiki.yml` for the config.
 
-### Step 9: Config File Generation
+### Step 9: Config File
 
-- REQ-790: The system SHALL create `llm-wiki.yml` in the wiki root directory.
-  The init script never overwrites an existing config. If one exists, `setup.sh`
-  SHALL ask before replacing it and, on "y", remove it before calling the init
-  script.
-- REQ-791: The config SHALL include all required keys: tool, wiki_path,
-  pages_dir, namespaces. And memory_path if provided.
-- REQ-792: The config SHALL include a header comment with generation date.
+- REQ-790: Setup SHALL create `llm-wiki.yml` in the wiki root as the last file. An
+  existing `llm-wiki.yml` is never replaced (plugin.md REQ-865 handles a configured wiki).
+- REQ-791: The config SHALL have exactly this form, with a trailing newline. An empty
+  value is written as the key and colon with nothing after it (`pages_dir:`). v1.7.1 wrote a
+  trailing space there; both parse as an empty value.
 
-### Step 10: Skill Installation
+  ```
+  # llm-wiki configuration
+  # Generated by llm-wiki on <DATE>
 
-- REQ-800: The system SHALL ask if the user wants to copy the skill
-  for Claude Code.
-- REQ-801: The user MAY enter a project path or "skip" to decline.
-- REQ-802: If installing: copy `SKILL.md` to `$project/.claude/commands/wiki.md`,
-  creating the directory if needed. The copy keeps the file name `wiki.md` (command
-  `/wiki`) so that it never collides with the plugin's `/llm-wiki`.
-- REQ-803: The system SHALL replace every occurrence of the literal string
-  `${user_config.wiki_path}` in the copied file with the absolute wiki path, and
-  every occurrence of `${CLAUDE_PLUGIN_ROOT}` with the absolute path of the
-  repository clone, so that `/wiki setup` finds the init script.
-- REQ-804: The replacement MUST behave identically on macOS and Linux and MUST
-  be safe for paths containing characters that are special to `sed`.
-- REQ-805: Before the skill-copy prompt the system SHALL print that the plugin
-  is the recommended install path and that the copy does not update itself.
-- REQ-806: After copying, the system SHALL verify that the copied file no
-  longer contains `${user_config.` or `${CLAUDE_PLUGIN_ROOT}` and SHALL print a
-  warning if it does.
+  tool: <logseq|obsidian>
+  wiki_path: <absolute wiki root, no trailing slash>
+  pages_dir: <pages_dir>
+  memory_path: <memory path or empty>
 
-### Step 11: Initial Git Commit
+  namespaces:
+    - <namespace 1>
+    - <namespace n>
+  ```
+- REQ-792: The header comment carries the generation date.
 
-- REQ-810: If git was initialized (Step 6) or `.git` already existed, the
-  system SHALL create an initial commit with the files this run created. It
-  MUST NOT stage other changes present in the wiki directory.
-- REQ-811: The commit message SHALL include: tool name, namespace count,
-  and a link to the GitHub repository.
-- REQ-812: A failed commit SHALL NOT abort the setup; the system SHALL print a
-  warning and leave the files uncommitted.
+### Step 10: Install without the plugin
 
-### Final Summary
+- REQ-807: The README SHALL describe the install without the plugin: copy `SKILL.md` to
+  `<project>/.claude/commands/wiki.md`; replace every `${user_config.wiki_path}` with the absolute
+  wiki root and every `${CLAUDE_PLUGIN_ROOT}` with the absolute path of the clone; run
+  `/wiki setup`. It SHALL say that the copy does not update itself and that the plugin is the
+  recommended path.
 
-- REQ-820: The system SHALL display a summary showing: wiki path, config
-  file path, and 3 suggested next steps.
-- REQ-821: The next steps SHALL include: open wiki in tool, try first ingest,
-  run status command, and the plugin install as the way to receive updates.
+### Step 11: First Commit
+
+- REQ-810: If the wiki root is a git repository (initialized in Step 6 or before) and
+  this run created at least one file, setup SHALL stage exactly the created files by path
+  (`git -C <root> add -- <paths>`) and commit them. It MUST NOT stage anything else.
+- REQ-811: The commit message SHALL be:
+
+  ```
+  wiki: initial setup via llm-wiki
+
+  Schema, Dashboard, and hub pages for <N> namespaces.
+  Tool: <tool>
+
+  Generated by https://github.com/MehmetGoekce/llm-wiki
+  ```
+- REQ-812: A failed commit SHALL NOT abort setup; it SHALL warn and leave the files
+  uncommitted.
+
+### Report
+
+- REQ-820: Setup SHALL end with the created and skipped files, the path of
+  `llm-wiki.yml`, and the next steps: open the wiki in the chosen tool, run
+  `/llm-wiki ingest "<a first source>"`, run `/llm-wiki status`.
 
 ---
 
 ## Scenarios
 
-### Scenario 1: Happy path — Logseq, new directory, defaults
+### Scenario 1: Logseq, new directory, defaults
 
 ```
-GIVEN python3 and git are available
-WHEN the user runs ./setup.sh and:
-    - Selects "1" (Logseq)
-    - Enters "~/Documents/TestWiki" (does not exist)
-    - Confirms "y" to create directory
-    - Presses Enter for default namespaces
-    - Enters "~/.claude/projects/test/memory/" for memory path
-    - Confirms "y" for git init
-    - Enters "~/myproject" for skill installation
-THEN the system SHALL:
-    - Create ~/Documents/TestWiki/pages/
-    - Create 10 pages: Schema, Dashboard, Access-Log, 7 hub pages (one per default namespace)
-    - Create llm-wiki.yml with all settings
-    - Initialize git with .gitignore
-    - Copy SKILL.md to ~/myproject/.claude/commands/wiki.md
-    - The copy SHALL contain the absolute path of ~/Documents/TestWiki as wiki root
-      and no "${user_config." string
-    - Create initial git commit
-    - Display summary with next steps
+GIVEN the plugin is installed with wiki root ~/Documents/TestWiki, which does not exist
+WHEN the user runs /llm-wiki setup and answers Logseq, default namespaces,
+     memory path ~/.claude/projects/test/memory/, git init yes
+THEN ~/Documents/TestWiki/pages/ SHALL contain 10 pages: Schema, Dashboard, Access-Log
+     and 7 hub pages
+AND llm-wiki.yml SHALL contain tool: logseq, pages_dir: pages and the memory path
+AND .gitignore SHALL have the four Logseq entries
+AND git log SHALL show one commit with the 12 created files
 ```
 
-### Scenario 2: Happy path — Obsidian, existing vault
+### Scenario 2: Obsidian, existing vault with git
 
 ```
-GIVEN ~/Documents/ObsidianVault/ already exists with .obsidian/ directory
-WHEN the user runs ./setup.sh and:
-    - Selects "2" (Obsidian)
-    - Enters "~/Documents/ObsidianVault"
-    - Presses Enter for default namespaces
-    - Skips memory path
-    - git already initialized (.git exists)
-    - Skips skill installation
-THEN the system SHALL:
-    - Create Wiki/ directory inside the vault
-    - Create Schema.md and Dashboard.md in Wiki/, Access-Log.md in Wiki/Reference/
-    - Create 7 namespace directories with _index.md hub pages
-    - Create llm-wiki.yml (no memory_path)
-    - Skip git init (already exists)
-    - Create git commit with new files
-    - Display summary
+GIVEN ~/Documents/ObsidianVault/ exists with .obsidian/ and .git/
+AND the vault has an uncommitted change in Notes/todo.md
+WHEN the user runs /llm-wiki setup, accepts the suggested Obsidian, default namespaces,
+     no memory path
+THEN setup SHALL NOT ask about git
+AND create Wiki/Schema.md, Wiki/Dashboard.md, Wiki/Reference/Access-Log.md,
+    7 Wiki/<ns>/_index.md files and llm-wiki.yml with an empty memory_path
+AND commit exactly those 11 files
+AND Notes/todo.md SHALL still be uncommitted
 ```
 
-### Scenario 3: Directory does not exist — user declines creation
+### Scenario 3: Wiki root is a file
 
 ```
-GIVEN the user enters wiki path "/nonexistent/path"
-AND the path does not exist
-WHEN the system asks "Create it? [y/n]"
-AND the user enters "n"
-THEN the system SHALL display an error message
-AND exit with code 1
-AND no files SHALL be created anywhere
+GIVEN the configured wiki root ~/wiki.txt is a regular file
+WHEN the user runs /llm-wiki setup and answers all questions
+THEN setup SHALL stop with an error naming ~/wiki.txt
+AND nothing SHALL be written
 ```
 
-### Scenario 4: Invalid tool selection
+### Scenario 4: Invalid tool answer
 
 ```
-WHEN the user enters "3" for tool selection
-THEN the system SHALL display: "Invalid choice"
-AND exit with code 1
+WHEN the user answers "Notion" to the tool question
+THEN setup SHALL name Logseq and Obsidian as the valid answers and ask again
+AND nothing SHALL be written
 ```
 
-### Scenario 5: python3 not available
+### Scenario 5: git not installed
 
 ```
-GIVEN python3 is not installed or not in PATH
-WHEN setup.sh reaches the template rendering step
-THEN the system SHALL fail with a python3-related error
-AND no wiki pages SHALL be created
+GIVEN git is not on PATH
+WHEN the user runs /llm-wiki setup on a new directory
+THEN setup SHALL warn that git steps are skipped
+AND create all pages and llm-wiki.yml
+AND create no .gitignore
 ```
 
-### Scenario 6: Template directory missing
+### Scenario 6: Templates missing in a copied skill
 
 ```
-GIVEN the templates/logseq/ directory does not exist
-    (e.g., setup.sh run from wrong location)
-WHEN setup.sh reaches template validation
-THEN the system SHALL display an error about missing templates
-AND exit with code 1
+GIVEN a copied skill in which ${CLAUDE_PLUGIN_ROOT} was not replaced
+WHEN the user runs /wiki setup
+THEN setup SHALL stop before writing
+AND say that the clone path has to be substituted, pointing to the README
 ```
 
-### Scenario 7: Skill installation skipped
+### Scenario 7: Second run adds nothing
 
 ```
-WHEN the user enters "skip" for the skill installation prompt
-THEN the system SHALL NOT copy wiki.md anywhere
-AND SHALL NOT modify any files outside the wiki directory
-AND SHALL continue to the git commit step
+GIVEN setup completed for a Logseq wiki, and the user deleted llm-wiki.yml afterwards
+WHEN the user runs /llm-wiki setup again with the same answers
+THEN every page SHALL be reported as "Skipped (already exists)"
+AND llm-wiki.yml SHALL be reported as created
+AND no page SHALL change
 ```
 
 ### Scenario 8: Custom namespaces
 
 ```
 WHEN the user enters "Engineering Sales Support" for namespaces
-THEN the system SHALL create 3 hub pages:
+THEN setup SHALL create 3 hub pages:
     - Wiki___Engineering.md (Logseq) or Wiki/Engineering/_index.md (Obsidian)
     - Wiki___Sales.md or Wiki/Sales/_index.md
     - Wiki___Support.md or Wiki/Support/_index.md
-AND the Schema page SHALL list these 3 namespaces
-AND llm-wiki.yml SHALL contain these 3 namespaces
+AND the Schema page SHALL list "Wiki/Engineering, Wiki/Sales, Wiki/Support"
+AND llm-wiki.yml SHALL list these 3 namespaces
+AND the Access-Log page SHALL still be created under Wiki/Reference, although Reference is not
+    in the list
 ```
 
-### Scenario 9: Git init skipped
+### Scenario 9: Git init declined
 
 ```
-GIVEN the wiki directory has no .git/
-WHEN the system asks "Initialize git? [y/n]"
-AND the user enters "n"
-THEN no .git directory SHALL be created
-AND no .gitignore SHALL be created
-AND the final commit step SHALL be skipped
+GIVEN the wiki root has no .git/
+WHEN the user declines git initialization
+THEN no .git directory and no .gitignore SHALL be created
+AND no commit SHALL be attempted
 ```
 
-### Scenario 10: Existing pages not overwritten
+### Scenario 10: Invalid namespace
 
 ```
-GIVEN ~/Documents/Logseq/pages/Wiki___Schema.md already exists
-    from a previous setup run
-WHEN setup.sh runs template rendering
-THEN the existing Schema page SHOULD NOT be overwritten
-AND the system SHOULD display: "Wiki___Schema.md already exists, skipping"
+WHEN the user enters "Tech 2024-Archive my_notes" for namespaces
+THEN setup SHALL name "2024-Archive" and "my_notes" as invalid and ask again
+AND nothing SHALL be written
 ```
 
-### Scenario 11: setup.sh and the init script produce the same wiki
+### Scenario 11: Same output as init-wiki.sh v1.7.1
 
 ```
 GIVEN two empty directories A and B
-WHEN setup.sh is run for A with Logseq, default namespaces, no memory path, no git
-AND init-wiki.sh --tool logseq --wiki-path B is run
+WHEN scripts/init-wiki.sh from a checkout of tag v1.7.1 is run for A with --tool <t> and namespaces N
+AND /llm-wiki setup is run for B with tool <t>, namespaces N, no memory path, no git, on the same day
 THEN the file lists of A and B SHALL be identical
-AND file contents SHALL differ only in the wiki_path line of llm-wiki.yml
+AND every file SHALL be byte-identical, except in llm-wiki.yml the wiki_path line and the
+    trailing space after an empty value (REQ-791)
+(run for t = logseq and t = obsidian, N = default and N = "Engineering Sales Support")
 ```
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] Only requires bash, python3, git (no package managers, no libraries)
-- [ ] Tool selection (1/2) determines all downstream behavior
-- [ ] Tilde expansion works in all path inputs
-- [ ] Missing directories created with user confirmation
-- [ ] Default namespaces offered, custom list accepted
-- [ ] Template rendering creates Schema, Dashboard, and all Hub pages
-- [ ] Logseq: flat files with triple-underscore naming
-- [ ] Obsidian: directory hierarchy with _index.md hub files
-- [ ] Config file generated with all required keys
-- [ ] Skill installation optional; the copy carries the wiki root and no plugin placeholder
-- [ ] Git init optional, tool-specific .gitignore
-- [ ] Existing pages not silently overwritten
-- [ ] Clear error messages for all failure modes
-- [ ] Final summary with actionable next steps
+- [ ] Needs only Claude Code; git optional, no python3, no package manager
+- [ ] Tool choice determines all downstream behavior; Logseq/Obsidian suggested from the directory
+- [ ] No write before all answers are valid; invalid answers are asked again
+- [ ] Created files byte-identical to init-wiki.sh v1.7.1 (Scenario 11, both tools)
+- [ ] Logseq: flat files with triple-underscore naming; Obsidian: `Wiki/<ns>/_index.md` hubs
+- [ ] Existing files never overwritten; one created/skipped line per target
+- [ ] Config has the exact form of REQ-791
+- [ ] Git init optional, tool-specific .gitignore, commit holds only created files
+- [ ] README documents the install without the plugin
 
 ---
 
 ## Dependencies
 
-- Templates must exist: `templates/logseq/{Schema,Hub,Dashboard,Access-Log}.md` and
+- Templates: `templates/logseq/{Schema,Hub,Dashboard,Access-Log}.md` and
   `templates/obsidian/{Schema,Hub,Dashboard,Access-Log}.md`
-- specs/plugin.md defines `scripts/init-wiki.sh`, which performs page creation
-- specs/config.md defines the format of the generated `llm-wiki.yml`
+- specs/plugin.md defines the `setup` subcommand (REQ-863-866)
+- specs/config.md defines the wiki root resolution and the format of `llm-wiki.yml`
 - specs/schema.md defines what the generated Schema page contains

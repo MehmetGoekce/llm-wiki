@@ -7,10 +7,40 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-11-07
+
+No scripts. Anthropic's plugin directory accepts executable files only from Verified
+organizations and refused v1.7.1 for its two shell scripts. `/llm-wiki setup` now creates the wiki
+itself; the wiki it creates is the same.
+
+### Changed
+
+- **`/llm-wiki setup` writes the pages, `llm-wiki.yml` and `.gitignore` itself** instead of running
+  `scripts/init-wiki.sh`. It renders the same templates, asks the same questions, never overwrites
+  a file and commits only the files it created. Tested against v1.7.1 in both tool modes, with the
+  default and a custom namespace list: every page is byte-identical.
+- An invalid answer (tool, namespace name) is asked again instead of ending setup.
+- `llm-wiki.yml` writes an empty value as `pages_dir:` without the trailing space v1.7.1 left.
+  Both read as empty.
+- Setup needs no python3 any more. git stays optional.
+
 ### Added
-- Documentation and support links in the plugin manifest, shown on the directory listing.
-- Privacy section in the README and a privacy link in the plugin manifest. The section names the optional access to the Claude Code memory directory.
+
+- Documentation, support and privacy policy links in the plugin manifest, read by the plugin
+  directory for its listing.
+- Privacy section in the README. It names the optional access to the Claude Code memory directory.
 - Security policy with a private channel for vulnerability reports.
+
+### Removed
+
+- `setup.sh` and `scripts/init-wiki.sh`.
+
+### Migration
+
+- **Plugin users:** nothing to do.
+- **Copied `/wiki` skill:** keeps working. To make a new copy, follow "Without the plugin" in the
+  README: copy `SKILL.md`, replace the wiki root and the clone path, run `/wiki setup`.
+- **Anyone who ran `./setup.sh`:** install the plugin, or copy the skill by hand as above.
 
 ## [1.7.1] - 2026-10-11
 
