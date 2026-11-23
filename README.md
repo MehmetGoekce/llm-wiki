@@ -60,16 +60,9 @@ Everyone loved the concept. Almost nobody built one. The gist describes *what* t
 
 ### As a Claude Code plugin (recommended)
 
-```bash
-claude plugin marketplace add MehmetGoekce/llm-wiki
-claude plugin install llm-wiki@mehmetgoekce
-```
-
-On Claude Code 2.1.275 or later, one line inside a session does the same:
-
-```
-/plugin install llm-wiki --marketplace MehmetGoekce/llm-wiki
-```
+This repository is its own plugin marketplace. Add the marketplace `MehmetGoekce/llm-wiki` and
+install the plugin `llm-wiki` from it, as the Claude Code documentation describes in
+[Discover and install plugins](https://code.claude.com/docs/en/discover-plugins).
 
 Claude Code asks for one value, the **Wiki root**: your Logseq graph or Obsidian vault. The directory
 may be empty or not exist yet. Then, in any project:
@@ -89,26 +82,13 @@ Tested with Claude Code 2.1.296.
 
 ### Without the plugin
 
-Clone the repository and copy the skill into the project that should use it:
-
-```bash
-git clone https://github.com/MehmetGoekce/llm-wiki.git ~/llm-wiki
-mkdir -p ~/myproject/.claude/commands
-cp ~/llm-wiki/SKILL.md ~/myproject/.claude/commands/wiki.md
-```
-
-In the copy, replace two placeholders with absolute paths:
+Keep a local copy of this repository, for example a clone in `~/llm-wiki`. In the project that
+should use the skill, copy `SKILL.md` to `.claude/commands/wiki.md`. In that copy, replace every
+occurrence of two placeholders with absolute paths, using your editor's search and replace:
 
 - `${user_config.wiki_path}` (the "Wiki root:" line): your Logseq graph or Obsidian vault
-- `${CLAUDE_PLUGIN_ROOT}` (the setup workflow): the clone, so that setup finds `templates/`
-
-On Linux (on macOS, write `sed -i ''` instead of `sed -i`):
-
-```bash
-sed -i -e 's|\${user_config.wiki_path}|/home/you/notes/wiki|g' \
-       -e 's|\${CLAUDE_PLUGIN_ROOT}|/home/you/llm-wiki|g' \
-       ~/myproject/.claude/commands/wiki.md
-```
+- `${CLAUDE_PLUGIN_ROOT}` (the setup workflow): your local copy of the repository, so that setup
+  finds `templates/`
 
 Then run `/wiki setup` in that project. The copy is invoked as `/wiki <command>`, stays at the
 version you copied, and needs the clone to stay where it is. The plugin is the recommended path.

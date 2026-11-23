@@ -30,6 +30,11 @@ templates the `setup` subcommand renders. It contains no executable files.
   `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp` or `.ico`. Plain text in another format (Mermaid, CSV,
   source code) goes into a fenced block of a `.md` file. Reason: v1.8.0 was refused for three
   `.mmd` files whose content was plain ASCII text.
+- REQ-835b: No shipped text (`README.md`, `SKILL.md`, `docs/`, templates) MAY show a command that
+  downloads code and runs it, and that includes the commands that install the plugin itself. Name
+  the marketplace and the plugin, and point to the Claude Code documentation for the steps. Reason:
+  the directory policy flagged `README.md` of v1.8.1 with `RUNTIME_FETCH_EXEC` (version can be
+  refused) for the install commands in the Quick Start.
 - REQ-836: No tracked file MAY start with `#!`, and the repository MUST NOT contain package manager
   configuration files (`package.json`, `pnpm-workspace.yaml`, `requirements.txt` and the like).
 - REQ-837: `SKILL.md` MUST NOT embed a program for the Bash tool to run in place of a removed
