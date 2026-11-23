@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-11-23
+
+The plugin directory's policy check flagged v1.8.1 for a download-and-run command in the README,
+which can get a version from an account without Verified status refused.
+
+### Changed
+
+- The README no longer shows install commands. The Quick Start names the marketplace and the
+  plugin and links the Claude Code documentation on installing plugins; the install without the
+  plugin describes the copy in prose instead of `git clone`, `cp` and `sed` commands. No change to
+  the plugin's behavior.
+
 ## [1.8.1] - 2026-11-07
 
 The plugin directory refused v1.8.0 as well: it judges a file's type by its extension, and the
